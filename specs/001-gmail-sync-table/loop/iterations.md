@@ -234,3 +234,23 @@ now ready for the checker.
   - `render_summary` always says `emails` (also for 1). The contract gives only the plural example.
   - The link test relies on `Console.export_html` emitting `<a href>` for `link` styles (Rich 15.0.0).
 - Handoff: continue maker (D3 incomplete). Next: T032–T033 (CLI), the last D3 pair; then D5 (squash `us1-wip` into one `feat(us1): ...` commit).
+
+## Iteration 14 — 2026-10-14
+- Targeted criteria: D3 (T032–T033, the last US1 pair)
+- Worktree: `../applytrail-loop-iter-14` on `us1-wip` (M-009); removed after commit.
+- Change (commit `b570565 wip(us1): applytrail CLI with preflight, progress and error exits (T032-T033)` on `us1-wip`):
+  - Test first, confirmed failing at collection (`ImportError: cannot import name 'cli'`): `tests/unit/test_cli.py`, 24 tests. A harness patches `mcp_client.GmailMcp`, `extractor.OllamaExtractor`, `sync.run_sync` (passes through to the real one unless a test sets a behaviour), and spies on `store.save` / `render.render_table` to record event order. Covers every T032 bullet: preflight before `GmailMcp` (exit 2, never constructed, store bytes unchanged); each `AppError` prints exactly its message as one line with its code; exit 4 saves, then prints the table, then the message; exit 3 and Ctrl-C save and print no table; `StoreUnreadable` (5) leaves bytes unchanged; `.env` in the cwd is loaded; unexpected errors print one line (no exception text), and with `APPLYTRAIL_DEBUG=1` write the traceback to `debug.log` (0600) and print its path. Also: success table + summary, `--version`, estimate line for >50 candidates and none at 50, auth failure saves nothing. `test_ctrl_c_during_preflight_exits_130_without_traceback` was added after the implementation (not seen failing first).
+  - `src/applytrail/cli.py`: `main(argv)`; `extractor`, `mcp_client`, `sync` imported lazily in `_sync_command` (ready for T039). `load_dotenv(find_dotenv(usecwd=True))`. Rich status spinner on stderr (`Searching Gmail…`, `Loading <model>…`, `Extracting k/N`); messages go through plain `print` to stderr.
+  - `tasks.md`: T032, T033 checked. No unchecked task left in T015–T033.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 424 passed. Smoke: `uv run applytrail --version` prints `applytrail 0.1.0`; with a temp `APPLYTRAIL_HOME` and `OLLAMA_HOST=http://127.0.0.1:9`, `applytrail` prints the not-running message and exits 2, with an empty home folder (no Gmail contacted). No full real run (needs Gmail + Ollama; that is T044/D9).
+- Maker self-assessment (maker's own view, NOT a verdict): all D3 tasks (T015–T033) done; D3 maker-ready. D5 (squash into one `feat(us1): ...` commit) not done; recommended after the checker grades D3 (fixes are cheap before the squash, M-008).
+- Open questions / risks:
+  - `--offline` is parsed but prints `--offline is not available yet.` and exits 1. The offline branch is T039 (US3); the per-iteration scope forbids spanning stories.
+  - Error messages use plain `print`, not Rich: in a non-TTY (and in tests) Rich wraps at 80 columns, breaking the one-line rule. The estimate line uses Rich `soft_wrap=True` so it does not fight the live spinner.
+  - Pending counts in the exit-4 messages come from the exception (`pending=`). Nothing sets them yet: the extractor raises with `pending=0`, so a real Ollama failure now says "0 emails pending". T036 (US2) makes `run_sync` set `stop_reason`/`pending`; the CLI must then rebuild the message from `store.sync.pending`.
+  - Partial saves happen only for exit 3, 4 and 130, as cli.md lists. `AuthRequired` (2) or `GmailError` (1) mid-sync drop the merged progress of that run; the next run redoes it (idempotent, only slower).
+  - The CLI does not call `store.save` after a successful `run_sync`, because `run_sync` already saves at the end (iteration 12). T033's text lists that save.
+  - The `.env` loader uses `find_dotenv(usecwd=True)`. `gmail_auth.main` uses bare `load_dotenv()`, which searches from the installed module's folder rather than the cwd, so `.env` in the cwd may not apply to `applytrail-auth`. Not changed (outside T033); worth a look.
+  - With `APPLYTRAIL_DEBUG=1`, `debug.log` holds `traceback.format_exc()`, including the exception message. An exception carrying email text would write it to disk (user opted in; Principle V says never log full bodies).
+  - Rich on a non-TTY stdout renders the table at 80 columns (e.g. `applytrail | less`), narrower than the 100-column layout.
+- Handoff: D3 maker-ready. Run `/speckit.loop.check` in a separate session to grade D3 on `us1-wip` (HEAD `b570565`) before the D5 squash.
