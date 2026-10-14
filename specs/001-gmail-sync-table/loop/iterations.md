@@ -254,3 +254,19 @@ now ready for the checker.
   - With `APPLYTRAIL_DEBUG=1`, `debug.log` holds `traceback.format_exc()`, including the exception message. An exception carrying email text would write it to disk (user opted in; Principle V says never log full bodies).
   - Rich on a non-TTY stdout renders the table at 80 columns (e.g. `applytrail | less`), narrower than the 100-column layout.
 - Handoff: D3 maker-ready. Run `/speckit.loop.check` in a separate session to grade D3 on `us1-wip` (HEAD `b570565`) before the D5 squash.
+
+## Iteration 15 — 2026-10-14
+- Targeted criteria: D3 (checker-fail, verdict V005)
+- Worktree: `../applytrail-loop-iter-15` on `us1-wip` (removed after commit `865e255`)
+- Change (all three V005 findings):
+  - Tests first, confirmed failing on `b570565`: `tests/unit/test_render.py::test_role_from_email_is_not_rich_markup` (roles `Engineer [/bad]` and `[bold]Engineer[/bold]` render literally); `tests/unit/test_cli.py::test_debug_log_omits_exception_messages` (chained `RuntimeError` from `ValueError`, both carrying synthetic body text; log keeps `Traceback` and both type names, no message text); `tests/unit/test_cli.py::test_malformed_dotenv_exits_1_without_traceback` (real `.env` with byte `\xff` in the cwd; exit 1, one stderr line naming `UnicodeDecodeError`, no service calls).
+  - `src/applytrail/render.py`: role cell wrapped in `Text`, so email text is never parsed as Rich markup (company cell already was).
+  - `src/applytrail/cli.py`: `load_dotenv` and `Settings.from_env` run inside a guarded block; any failure prints `Unexpected error (<Type>) while reading settings. Check .env and the APPLYTRAIL_* variables.` and returns 1 (no debug log, since its path comes from settings). The debug log now uses `_traceback_without_messages()`: frames and `module.QualName (message omitted)` for each exception in the `__cause__`/`__context__` chain; exception messages and notes are never written.
+  - `contracts/cli.md`: `APPLYTRAIL_DEBUG` row says the log holds frames and exception types, no messages.
+- Verification run by maker: ruff check and format pass; `uv run pytest` 428 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): V005 findings addressed; D3 maker-ready again.
+- Open questions / risks:
+  - Debug-log frames quote source lines from our code; they never contain email text, but a test that raises with a literal would see its own source line (the new test passes messages through variables for that reason).
+  - Settings failures cannot write a debug log even with `APPLYTRAIL_DEBUG=1`, because the log path comes from settings.
+  - Other iteration-14 risks are unchanged (exit-4 "0 emails pending" until T036; no partial save on exit 1/2 mid-sync; `applytrail-auth` uses bare `load_dotenv()`; 80-column table on non-TTY stdout).
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to re-grade D3 on `us1-wip` (HEAD `865e255`).
