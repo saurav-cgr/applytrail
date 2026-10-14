@@ -1,5 +1,17 @@
 <!--
 Sync Impact Report
+- Version change: 1.1.0 -> 1.1.1 (PATCH: the named MCP library changes from the mcp 2.x SDK's
+  MCPServer to the standalone fastmcp 4.x package; same protocol, same tool contract, no
+  principle or permission boundary changed)
+- Modified principles: none.
+- Technical Constraints: core dependency "mcp 2.x (MCPServer and stdio client)" becomes
+  "fastmcp 4.x (FastMCP server and client; mcp 2.x is its protocol layer)". Python >= 3.11 is
+  unchanged (fastmcp's mcp 2.x dependency requires it).
+- Added sections: none. Removed sections: none.
+- Templates: .specify/templates/* reviewed; no change needed.
+- Follow-up TODOs: none. AGENTS.md and README.md already name fastmcp.
+
+Previous report (1.1.0):
 - Version change: 1.0.0 -> 1.1.0 (MINOR: provider guidance and technical constraints materially
   changed to match the 001-gmail-sync-table plan; no principle removed, no permission boundary
   changed)
@@ -117,8 +129,8 @@ the judgment it is needed for.
 ## Technical Constraints
 
 - **Language:** Python ≥ 3.11, packaged with `pyproject.toml`, installed via `uv` or `pipx`.
-- **Core dependencies:** `mcp` 2.x (`MCPServer` and stdio client), `google-api-python-client`,
-  `google-auth-oauthlib`, `pydantic`, `rich`, `python-dotenv`.
+- **Core dependencies:** `fastmcp` 4.x (`FastMCP` server and client; `mcp` 2.x is its protocol
+  layer), `google-api-python-client`, `google-auth-oauthlib`, `pydantic`, `rich`, `python-dotenv`.
 - **Extraction:** local Ollama over HTTP, called with the standard library (`urllib`). No hosted
   LLM SDK.
 - **Default model:** `qwen3:4b`, overridable via `APPLYTRAIL_MODEL`.
@@ -152,4 +164,4 @@ that updates this file and the Sync Impact Report, with semantic versioning:
 
 Compliance is checked at the plan stage and in PR review.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+**Version**: 1.1.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
