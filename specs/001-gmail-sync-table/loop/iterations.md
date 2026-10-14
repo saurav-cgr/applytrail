@@ -81,3 +81,21 @@ now ready for the checker.
   - The job-term list in the query is a judgement call (R4 names no terms); the golden set (T023) should include phrasings it might miss.
   - `-0000` Date headers (no zone info) fall back to `internalDate` instead of being read as UTC.
 - Handoff: continue maker (D3 incomplete); checker may review the `us1-wip` work early.
+
+## Iteration 5 — 2026-10-14
+- Targeted criteria: D3 (partial: T015, plus tests the task list does not demand)
+- Worktree: `../applytrail-loop-iter-5` on `us1-wip` (M-009); removed after commit.
+- Change (commit `0c3643a wip(us1): gmail read-only sign-in and token loading (T015)` on `us1-wip`):
+  - Tests first, confirmed failing at collection (`ImportError` for `gmail_auth`): `tests/unit/test_gmail_auth.py`. Fake `InstalledAppFlow`; no browser, no network. Covers: only the readonly scope; missing `credentials.json` (exit 2, exact message, no flow); success (`port=0`, token 0600, folder 0700, exact message); a 0644 token replaced by a 0600 one; denied / Ctrl-C / empty-message failures (exit 1, no token written); `load_credentials` with valid, missing, malformed, wrong-scope, expired+refreshed (rewritten 0600), expired without refresh token, revoked (token untouched) and offline refresh. `load_credentials` tests replace `InstalledAppFlow` with an object that fails on any use.
+  - `src/applytrail/gmail_auth.py`: `SCOPES`, `main()` (loads `.env`, returns the exit code for the console script), `load_credentials(settings)`.
+  - `src/applytrail/store.py`: atomic 0600 write extracted from `save` into `write_private(path, text)` and reused for the token. The post-write `os.chmod(tmp, 0o600)` was dropped (T015 says "create with 0o600; do not chmod after writing"); `os.open(..., 0o600)` already sets the mode, and umask can only remove bits.
+  - `.gitignore`: `token.json.tmp`.
+  - `tasks.md`: T015 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 181 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T015 done. D3 not ready (T018–T024, T026–T027 remain; T028+ blocked on D4).
+- Open questions / risks:
+  - Deviation from T015's text: a refresh that fails with `TransportError` (offline) raises `NetworkUnavailable`, not `AuthRequired`, so an offline user is not told to sign in again. A `RefreshError` (revoked, expired grant) still raises `AuthRequired`.
+  - `main()` catches any `Exception` from the OAuth flow and prints its first line as the short reason. The library's exception types for a denied consent vary, so a narrower list risks a stack trace.
+  - The scope check uses `Credentials.has_scopes`, so a token that also carries extra scopes still loads. Only `main()` requests scopes, and it asks for readonly only.
+  - `main()` itself is not run against a real Google client in tests; D9 (quickstart) covers that.
+- Handoff: continue maker (D3 incomplete).
