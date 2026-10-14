@@ -397,3 +397,4 @@ now ready for the checker.
   - The constitution draft is unstaged in the main working copy. It must not be committed by the loop; the human reviews and commits it.
   - The README states behaviour from `contracts/cli.md` and the code; the live Gmail and Ollama steps are untested until T044 (D9).
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D8 (commit `16af966`).
+- Human ruling (2026-10-14, after iteration 23): the D8 Gmail write-call grep now uses whole words (`grep -rnw`), so the required `sender` field no longer matches `send`. The human changed the criterion; the maker only applied the edit. The new grep prints nothing.
