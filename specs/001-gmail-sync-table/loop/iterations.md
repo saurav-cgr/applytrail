@@ -366,3 +366,16 @@ now ready for the checker.
   - The incomplete-with-nothing-pending wording is the maker's own; cli.md shows only the pending form.
   - With no `last_sync_at` but some applications (should not happen), the table prints without a last-sync line.
 - Handoff: not ready for check yet. Next maker iteration: squash `us3-wip` into one `feat(us3): ...` commit (backup branch first), then D7 goes to the checker.
+
+## Iteration 22 — 2026-10-14
+- Targeted criteria: D7 (US3 landed as one commit)
+- Worktree: in place on `001-gmail-sync-table` (a squash merge has to land on the feature branch)
+- Change:
+  - Kept `backup/pre-squash-us3` at `48947ee`.
+  - `git merge --squash us3-wip` onto `b65752c`: no overlap. US3 touched no loop files, and the feature branch touched only loop files since the fork.
+  - Committed `fa757fd feat(us3): view the saved table offline`: 5 files, +265/−7 (`cli.py`, `render.py`, `test_cli.py`, `test_render_perf.py`, `tasks.md`).
+  - Deleted `us3-wip`; the backup branch keeps it.
+- Verification run by maker on the squashed tree before committing: ruff check and format pass; `uv run pytest` 460 passed; the D7 command `uv run pytest tests/unit/test_cli.py tests/unit/test_render_perf.py` 35 passed. The perf test asserts under 2 s for 500 rows (measured 0.09 s in iteration 21).
+- Maker self-assessment (maker's own view, NOT a verdict): D7 maker-ready.
+- Open questions / risks: the iteration-21 decisions are still open for review. A synced store with no applications prints the table message plus the last-sync line, not "No data yet". The wording for an incomplete sync with nothing pending is the maker's own.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D7 (commit `fa757fd`).
