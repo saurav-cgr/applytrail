@@ -1,0 +1,35 @@
+installed:
+- loop
+- staff-review
+settings:
+  auto_execute_hooks: true
+hooks:
+  after_tasks:
+  - extension: loop
+    command: speckit.loop.define
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Define an autonomous loop to drive these tasks to completion (maker/checker
+      split, externalized state)?
+    description: Set up a loop contract after task generation
+    condition: null
+  after_implement:
+  - extension: loop
+    command: speckit.loop.check
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Run an independent checker pass on this implementation (the model that
+      wrote the code should not be the one to grade it)?
+    description: Adversarial maker/checker verification after implementation
+    condition: null
+  - extension: staff-review
+    command: speckit.staff-review.run
+    enabled: true
+    optional: true
+    priority: 10
+    prompt: Run staff-level code review?
+    description: Reviews implementation changes against spec for correctness, security,
+      and quality
+    condition: null

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# Secrets and local data (Constitution Principle V)
+.env
+credentials.json
+token.json
+.applytrail/

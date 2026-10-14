@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "loop": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:71a9e8b5bbd450fa5851cf5af9961202d14ecfb942289ca7318d33938c0d88c1",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "codex": [
+          "speckit.loop.define",
+          "speckit.loop.run",
+          "speckit.loop.check",
+          "speckit.loop.guard",
+          "speckit.loop.status"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-10-14T06:44:19.798842+00:00"
+    },
+    "staff-review": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:320fa967c40ae943e37ceb0a1fb0f8dda42eb22b07be8428674ce72532e28e1e",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "codex": [
+          "speckit.staff-review.run"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-10-14T06:45:11.953822+00:00"
+    }
+  }
+}
