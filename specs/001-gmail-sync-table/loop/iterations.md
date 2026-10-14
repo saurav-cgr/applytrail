@@ -303,3 +303,16 @@ now ready for the checker.
   - Badges reset only after the search succeeds. A failure during the search keeps the previous run's badges, so the exit-4 table for a rate limit hit during the search shows the last run's badges. Resetting before the search would follow data-model.md "reset at the start of every run" more literally.
   - The re-raised error uses `from None`, so the original exception is not chained in a debug log.
 - Handoff: not ready for check yet. Next maker iteration: T037, then squash `us2-wip` into one `feat(us2): ...` commit.
+
+## Iteration 18 — 2026-10-14
+- Targeted criteria: D6 (US2), second increment: T037.
+- Worktree: `../applytrail-loop-iter-18` on `us2-wip` (removed after commit `e3d9f32`).
+- Change:
+  - `tests/unit/test_render.py`: `test_badges_are_text_without_colour` (with `no_color=True`, rows read `NEW`, `UPD` and blank for added, updated and other keys, in render order) and `test_second_sync_with_no_changes_shows_no_badges` (two `run_sync` calls with the same fixture; first table shows `NEW`, second shows no badge; US2 scenario 3).
+  - `src/applytrail/render.py`: no change needed. The badge column already read `sync.added`/`sync.updated` since iteration 13.
+  - `tasks.md`: T037 checked. All US2 tasks (T034–T037) are checked.
+- Test-first evidence: both tests passed on first run, because the render code predates them. Instead, they were checked against broken code. With US1's `sync.py`/`merge.py` (no badge tracking), the second-run test fails. With the render badge forced blank, both tests fail.
+- Verification run by maker: ruff check and format pass; `uv run pytest` 449 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): US2 tasks done. D6 not ready: the single `feat(us2)` commit is still to do.
+- Open questions / risks: the two iteration-17 decisions (`network` as the stop reason for every non-Ollama stop; badges reset only after a successful search) are still open for a human or the checker.
+- Handoff: not ready for check yet. Next maker iteration: squash `us2-wip` into one `feat(us2): ...` commit (backup branch first), then D6 goes to the checker.

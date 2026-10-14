@@ -20,7 +20,7 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 
 ## Budget
 - Max iterations: 50
-- Iterations run: 17
+- Iterations run: 18
 - Isolation: worktree
 - Per-iteration scope: one phase, or one test+implementation task pair, per iteration. Never span two user stories in one iteration.
 
