@@ -8,9 +8,9 @@
 |----|-----------------------|-----------------------------|--------|
 | D1 | Setup + Foundational (T001–T014) done: package skeleton, errors, config, models, normalize, store, fixtures, fakes | `uv sync` exits 0; `uv run pytest tests/unit/test_models.py tests/unit/test_normalize.py tests/unit/test_store.py` exits 0; T001–T014 checked in tasks.md | checker-pass |
 | D2 | Foundation landed as one commit | `git log --oneline` shows one commit for Phases 1–2 (e.g. `chore: project setup and foundational modules`); `git show --stat` touches only Phase 1–2 files | checker-pass |
-| D3 | US1 automatable tasks (T015–T024, T026–T033) done | `uv run pytest` exits 0 incl. `test_gmail_client`, `contract/test_mcp_tools`, `test_extractor`, `test_merge`, `integration/test_sync_first_run`, `test_render`, `test_cli`; tasks checked | maker-ready |
+| D3 | US1 automatable tasks (T015–T024, T026–T033) done | `uv run pytest` exits 0 incl. `test_gmail_client`, `contract/test_mcp_tools`, `test_extractor`, `test_merge`, `integration/test_sync_first_run`, `test_render`, `test_cli`; tasks checked | checker-pass |
 | D4 | T025 extractor gate passed (manual, Ollama) | `tests/golden/RESULTS.md` has a row with model, accuracy ≥ 90%, 0 non-job leaks, date (SC-003); human signs off in debt.md | human-signed |
-| D5 | US1 landed as exactly one commit | One `feat(us1): ...` commit containing all Phase 3 files; `uv run pytest` green at that commit | pending |
+| D5 | US1 landed as exactly one commit | One `feat(us1): ...` commit containing all Phase 3 files; `uv run pytest` green at that commit | maker-ready |
 | D6 | US2 (T034–T037) done and landed as one `feat(us2): ...` commit | `uv run pytest tests/unit/test_merge.py tests/integration/test_sync_incremental.py tests/unit/test_render.py` exits 0 at that commit; second sync yields zero changes/badges (SC-004 test) | pending |
 | D7 | US3 (T038–T040) done and landed as one `feat(us3): ...` commit | `uv run pytest tests/unit/test_cli.py tests/unit/test_render_perf.py` exits 0 at that commit; perf test asserts < 2 s for 500 rows (SC-002) | pending |
 | D8 | Polish (T041–T043) done | `uv run ruff check . && uv run ruff format --check . && uv run pytest` exits 0; `grep -rn "google.genai\|import ollama" src/` empty; `grep -rn "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` empty; README.md exists | pending |
@@ -20,7 +20,7 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 
 ## Budget
 - Max iterations: 50
-- Iterations run: 15
+- Iterations run: 16
 - Isolation: worktree
 - Per-iteration scope: one phase, or one test+implementation task pair, per iteration. Never span two user stories in one iteration.
 

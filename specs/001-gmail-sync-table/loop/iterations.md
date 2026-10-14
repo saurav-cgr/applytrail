@@ -270,3 +270,18 @@ now ready for the checker.
   - Settings failures cannot write a debug log even with `APPLYTRAIL_DEBUG=1`, because the log path comes from settings.
   - Other iteration-14 risks are unchanged (exit-4 "0 emails pending" until T036; no partial save on exit 1/2 mid-sync; `applytrail-auth` uses bare `load_dotenv()`; 80-column table on non-TTY stdout).
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to re-grade D3 on `us1-wip` (HEAD `865e255`).
+
+## Iteration 16 — 2026-10-14
+- Targeted criteria: D5 (D3 is checker-pass per V006)
+- Worktree: in place on `001-gmail-sync-table` (a squash merge has to land on the feature branch)
+- Change:
+  - Kept `backup/pre-squash-us1` at `865e255` (the full `wip(us1)` history), as M-008 asks.
+  - `git merge --squash us1-wip` onto `487095e`: no overlap. US1 touched no loop files, and the feature branch touched only loop files since the fork at `b629f7d`.
+  - Committed `d3fa14b feat(us1): sync Gmail job emails into a local table`: 68 files, +4477/−43, all Phase 3 source, tests, golden fixtures, eval script and the matching spec edits (`tasks.md`, `contracts/cli.md`, `research.md`, `.gitignore`).
+  - Deleted `us1-wip` (M-009); the backup branch keeps it.
+- Verification run by maker on the squashed tree before committing: `uv sync`; ruff check and format pass; `uv run pytest` 428 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): D5 maker-ready. One `feat(us1)` commit holds every US1 file. Loop bookkeeping commits sit before and after it, as with the foundation commit (D2).
+- Open questions / risks:
+  - `verdicts.md` still holds the checker's uncommitted V005 and V006 text. The maker does not commit checker files, so it stays out of both commits.
+  - The `feat(us1)` commit is on the feature branch only. Nothing is pushed.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D5 (commit `d3fa14b`).
