@@ -648,7 +648,7 @@ changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
     (`FastMCP` server and client; `mcp` 2.x protocol layer)".
   - Bump the patch version and update the Sync Impact Report.
   - **Leave it uncommitted for user review.**
-- [ ] T054 Run `uv run ruff check . && uv run ruff format --check . && uv run pytest`, then
+- [x] T054 Run `uv run ruff check . && uv run ruff format --check . && uv run pytest`, then
   quickstart Scenarios 6 and 7 (`specs/001-gmail-sync-table/quickstart.md`):
   - `fastmcp list` shows the two tools with the documented schemas.
   - `fastmcp call` with an empty `APPLYTRAIL_HOME` prints the `AUTH_REQUIRED` error with no banner.
