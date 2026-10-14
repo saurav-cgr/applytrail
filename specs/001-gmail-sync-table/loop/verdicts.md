@@ -17,6 +17,11 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V010 | 22 | D7 | Clean detached worktree at fa757fd: required 35 tests and full 460 tests pass, Ruff passes; single US3 commit/task audit; independent fresh-process offline probes forbid sockets, subprocesses, writes and network imports; 500 rows render in 0.27–0.30 s | pass | high | 2026-10-14 |
 | V011 | 23 | D8 | Clean detached worktree at 8fc7e1e: uv sync, Ruff lint/format and full pytest (460) pass; provider/write-call searches and AST audit empty; README/task/constitution audit; temporary uv tool install and installed-command probes pass | pass | high | 2026-10-14 |
 | V012 | 23 (post-iteration human gate) | D9 | Clean feature tree dc6049b: RESULTS.md six scenario records, debt.md human sign-off and accepted 3b waiver audited against revised contract; no implementation drift; 460 tests and Ruff pass; live run not independently repeated | pass | medium | 2026-10-14 |
+| V013 | 24 | D10 | Clean fastmcp-wip worktree at 468b84d: independent uv sync exits 0; installed fastmcp 4.1.0 and mcp 2.3.0; manifest/lock assertions exclude direct mcp and retain Python >=3.11; T045 checked; 460 pytest tests and Ruff lint/format pass | pass | high | 2026-10-14 |
+| V014 | 25 | D11 | Clean fastmcp-wip at 3ac0041: 461 pytest tests, Ruff lint/format, source/import audit and frozen-assertion comparison pass; independent invalid-input, boundary, JSON/error and isolated stdio probes pass; two new assertions fail on pre-migration source | pass | high | 2026-10-14 |
+| V015 | 26 | D12 | Clean fastmcp-wip at 48dd4b1: real FastMCP CLI over isolated stdio lists exactly two tools with contractual schemas; call exits 1 with exact AUTH_REQUIRED text; no banner; explicitly passed temporary home stays empty | pass | high | 2026-10-14 |
+| V016 | 26 | D13 | Migration docs and T045–T053 checkboxes audited at 48dd4b1; main-copy constitution 1.1.1 PATCH report and unchanged principles verified, draft unstaged/uncommitted; Ruff passes and 461 tests pass | pass | high | 2026-10-14 |
+| V017 | 27 | D15 | Feature branch at 1e8fbc5: exactly one refactor(mcp) commit since 3a091e5; tree identical to reviewed 48dd4b1 and backup; exact nine intended paths, constitution excluded; no implementation drift; 461 pytest tests and Ruff pass | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -532,3 +537,185 @@ checkpoint and explicit closure sign-off. The loop is not declared done.
 Live Gmail/Ollama scenarios were not independently repeated. SC-001 speed and
 memory remain unmeasured (accepted DEBT-002); the accepted prompt-injection
 extraction leak remains (DEBT-001).
+
+## Iteration 24 independent check — 2026-10-14
+
+This checker did not produce iteration 24. D10 is the only maker-ready criterion;
+D11–D15 remain pending. One independent vote is required. Checks ran in the clean
+migration worktree `/Users/saurav/projects/applytrail-loop-iter-24`, on
+`fastmcp-wip` at `468b84d`, rather than the feature branch's pre-migration tree.
+
+### D10: pass (high confidence)
+
+- Independent `uv sync` exits 0 and resolves 99 packages. No cyclopts warning
+  appears on this run. The initial sandbox cache-access denial was resolved by
+  rerunning with approved elevated access; it is not a dependency failure.
+- Installed metadata prints `4.1.0 2.3.0` for fastmcp and mcp respectively.
+- Adversarial assertions check both manifest and lock: fastmcp is a direct
+  dependency, mcp is not, and the Python floor remains `>=3.11`. T045 is checked
+  in the migration worktree's tasks.md. The commit diff changes only the
+  dependency, lock and T045 checkbox; source and tests remain unchanged.
+- Full pytest passes: 460 tests in 4.58 seconds. Ruff lint and format pass
+  (43 files). These are compatibility checks, not evidence that D11 is complete:
+  the server and client still use the transitive mcp package.
+
+No failures, uncertain criteria or new debt. D10 becomes checker-pass and Phase
+becomes checked. Only loop.md and verdicts.md are edited by this checker; the
+implementation and iterations.md are untouched. Recommend `/speckit.loop.run`
+for D11 and the remaining migration criteria. The loop is not done.
+
+A fresh virtual environment, minimum-Python execution and live Gmail/Ollama were
+not checked. D11–D15 remain unverified; the accepted DEBT-001 and DEBT-002 risks
+remain. Direct receipt: verified the exact maker commit against D10 and recorded
+V013 without expanding implementation scope.
+
+
+## Iteration 25 independent check — 2026-10-14
+
+This checker did not produce iteration 25. D11 is the only maker-ready criterion.
+One independent vote is required. The primary source is the clean migration
+worktree `/Users/saurav/projects/applytrail-loop-iter-24` on `fastmcp-wip`, commit
+`3ac0041`. D12–D15 remain pending and were not graded.
+
+### D11: pass (high confidence)
+
+- Full pytest passes: 461 tests in 4.97 seconds. Ruff lint and format pass
+  (43 files). Searches of src/tests find no direct mcp imports, MCPServer or
+  StdioServerParameters. The server contains no CallToolResult construction.
+- Reviewed the complete code/test diff against pre-goal-2 commit `3a091e5` and
+  the callers in cli.py. Existing test expected values are unchanged. An AST
+  comparison independently confirms every existing test assertion is preserved;
+  the added StdioTransport assertion and the single masked-error test are the
+  only additional assertions. T046–T050 are checked in worktree tasks.md.
+- Independent adversarial probes reject six invalid/missing arguments before
+  the service factory is reached. Four valid lower/upper-bound calls succeed,
+  and their text JSON equals structured_content. All calls use fake Gmail.
+- For both tools, injected AuthRequired, NetworkUnavailable, GmailRateLimited,
+  GmailError(418), and an unexpected RuntimeError produce ten exact error
+  responses. The unexpected error marker is absent from client responses;
+  expected errors retain their contractual prefixes without SDK-added text.
+- The real synchronous GmailMcp wrapper spawns the stdio server twice, using
+  an explicitly passed empty temporary home whose path includes spaces.
+  Both tools return typed AuthRequired errors in each session. Repeated context
+  entry/exit clears client, portal and stack references; the home stays empty.
+  No live Gmail or Ollama calls occur in this check.
+- Replayed the two new assertions against source from `468b84d`, loaded only
+  into disposable checker modules. The old client fails the StdioTransport
+  assertion. The old server's unexpected-error response differs from the new
+  exact masked text, so that assertion also fails. This independently proves
+  the assertions discriminate the old implementation; it does not reconstruct
+  the maker's historical order of edits.
+
+No failures, uncertain criteria or new debt. D11 becomes checker-pass and Phase
+becomes checked. Only loop.md and verdicts.md are edited by the checker; source,
+tests, iterations.md and existing human records are untouched. DEBT-003's human
+acknowledgement and D12 command approval remain recorded; D12 itself is pending.
+Recommend `/speckit.loop.run` for the remaining migration criteria. Passing D11
+is not loop closure.
+
+FastMCP emits start/error logs on stderr during stdio calls; responses remain
+parseable and the expected error text is preserved. D12 CLI schema/banner checks,
+a fresh virtual environment, minimum-Python execution, and real-mail regression
+were not run. Accepted DEBT-001 injection leakage and DEBT-002 unmeasured timing
+remain. Direct receipt: verified D11 against the exact maker commit and recorded
+V014 without modifying the implementation.
+
+
+## Iteration 26 independent check — 2026-10-14
+
+This checker did not produce iteration 26. D12 and D13 are the only maker-ready
+criteria. One independent vote is required. The migration source is the clean
+worktree `/Users/saurav/projects/applytrail-loop-iter-24`, `fastmcp-wip` at
+`48dd4b1`. The constitution draft is deliberately checked in the main feature
+working copy, as specified by the contract. D14 and D15 are not graded.
+
+### D12: pass (high confidence)
+
+- Ran the installed FastMCP CLI's list and call commands against the actual
+  stdio server. Both commands explicitly set an empty temporary APPLYTRAIL_HOME
+  inside --command, consistent with the approved DEBT-003 fix. The list command
+  uses the same isolation safeguard; no credentials are loaded from the real home.
+- List exits 0 and emits parseable JSON with exactly search_job_emails and
+  get_email. Independent assertions verify required arguments, datetime format,
+  nullable page_token, integer bounds/defaults (1–500/500 and 500–20000/4000),
+  search output keys and message fields, and all seven email output fields with
+  boolean truncated. These match contracts/mcp-tools.md.
+- The search call with after=2026-04-15T00:00:00Z exits 1 and stdout is exactly
+  `Error: AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth.`
+  Neither stdout nor stderr contains a FastMCP version banner, banner marker or
+  banner frame. The isolated home remains empty. Stderr contains ordinary
+  server logs; it does not contaminate the JSON or error text on stdout.
+- Repeated the CLI check with schema assertions after inspecting the primary
+  JSON. Both runs passed. No README real-home call or live Gmail/Ollama call ran.
+
+### D13: pass (high confidence)
+
+- AGENTS.md names FastMCP 4.x server/client and StdioTransport, with mcp as its
+  protocol layer. README adds the FastMCP CLI inspector option and explicitly
+  explains passing APPLYTRAIL_HOME inside --command. Existing MCP Inspector
+  and Claude Desktop snippets remain unchanged.
+- Every task T045–T053 is checked in the migration worktree. Its latest commit
+  changes only AGENTS.md, README.md and task checkboxes. Source, tests, manifest
+  and lock have no drift from independently checked commit 3ac0041.
+- The main-copy constitution footer changes 1.1.0 to 1.1.1, its new Sync Impact
+  Report describes that PATCH, and Technical Constraints name fastmcp 4.x.
+  An independent comparison confirms all Core Principles are unchanged.
+  The constitution diff remains unstaged and uncommitted, as required.
+- Ruff lint and format pass (43 files). Full pytest also passes: 461 tests in
+  5.65 seconds on the exact migration tree.
+
+No failures, uncertain criteria or new debt. D12 and D13 become checker-pass;
+Phase becomes checked. Only loop.md and verdicts.md are edited by this checker;
+implementation, iterations.md, constitution and human sign-off records are
+untouched. Recommend `/speckit.loop.run` for the remaining D14/D15 work.
+The checker does not declare the migration done.
+
+Real-mail regression (D14), final single-commit landing (D15), minimum-Python
+execution and fresh-environment installation remain unchecked. Accepted
+DEBT-001 injection leakage and DEBT-002 unmeasured timing remain. Direct receipt:
+verified CLI parity and documentation/governance at their primary sources and
+recorded V015/V016 without expanding implementation scope.
+
+
+## Iteration 27 independent check — 2026-10-14
+
+This checker did not produce iteration 27. D15 is the only maker-ready criterion.
+One independent vote is required. Primary source: feature branch
+`001-gmail-sync-table` at `1e8fbc53ff632721d9fcc7aa3de1212cd407781c`.
+D14 remains pending and is not graded; no human real-mail regression report or
+sign-off for this migration exists in debt.md.
+
+### D15: pass (high confidence)
+
+- Independent history assertions confirm HEAD is 1e8fbc5 on the required
+  feature branch, its parent is pre-migration 3a091e5, and exactly one commit
+  exists in that range. Its subject is
+  `refactor(mcp): migrate MCP server and client to FastMCP`.
+- The full committed tree hash equals independently checked 48dd4b1 and
+  backup/pre-squash-fastmcp. Squashing introduced no content change.
+- The commit changes exactly the nine intended files: AGENTS.md, README.md,
+  pyproject.toml, uv.lock, both MCP modules, both MCP test files and tasks.md.
+  T045–T053 are checked; T054 stays open. The constitution is excluded from
+  the commit and remains an unstaged, uncommitted draft for human review.
+- Adversarial audit checks for extra commits/files, a changed reviewed tree,
+  missing task checkboxes, accidental constitution inclusion and uncommitted
+  implementation drift. None is found. Current uncommitted loop, quickstart
+  and constitution documents do not change the tested executable tree.
+- Ran the complete suite on that exact feature implementation: 461 tests pass
+  in 5.78 seconds. Ruff lint and format pass (43 files).
+
+No failures, uncertain targeted criteria or new debt. D15 becomes checker-pass
+and Phase becomes checked. Only loop.md and verdicts.md are edited by this
+checker; the implementation, iterations.md, constitution and human records are
+untouched. No commit or push was made.
+
+Recommend `/speckit.loop.status` until the human runs `applytrail` and
+`applytrail --offline` on the real mailbox and records the D14 regression
+report/sign-off. T054 and D14 remain pending. After that gate receives its own
+checker verdict, `/speckit.loop.guard` is still required for migration closure.
+The earlier goal-1 closure sign-off does not close goal 2.
+
+Live Gmail/Ollama, minimum-Python execution and fresh-environment installation
+were not checked. Accepted DEBT-001 injection leakage and DEBT-002 unmeasured
+timing remain. Direct receipt: verified the single landed commit and its tested
+tree against D15 without expanding implementation scope.

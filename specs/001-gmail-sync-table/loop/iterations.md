@@ -400,3 +400,73 @@ now ready for the checker.
 - Human ruling (2026-10-14, after iteration 23): the D8 Gmail write-call grep now uses whole words (`grep -rnw`), so the required `sender` field no longer matches `send`. The human changed the criterion; the maker only applied the edit. The new grep prints nothing.
 - Human ruling (2026-10-14, after iteration 23): the human will not run quickstart Scenario 3b (speed and memory). D9 now requires Scenarios 1–6 without 3b. The SC-001 gap is recorded as DEBT-002, accepted.
 - Human report (2026-10-14, after iteration 23): T044 quickstart run on a real mailbox; Scenarios 1–6 (without 3b) all behaved as expected. The maker recorded this in `tests/golden/RESULTS.md`, checked T044 and logged the D9 sign-off in `debt.md`. Maker spot check, counts and modes only: store, token and credentials are `0600`; 106 applications from 754 processed emails; last sync complete; no `body_text` in the store. D9 set to maker-ready for the checker.
+
+## Iteration 24 — 2026-10-14
+- Targeted criteria: D10 (goal 2, T045)
+- Worktree: `../applytrail-loop-iter-24` on temporary branch `fastmcp-wip` (from `3a091e5`). Kept for the next goal-2 iterations; WIP commits there are squashed into the single `refactor(mcp): ...` commit at D15.
+- Change:
+  - Committed `468b84d wip(mcp): T045 replace mcp with fastmcp dependency` on `fastmcp-wip`: 3 files.
+  - `pyproject.toml:8`: `"mcp>=2.3,<3"` → `"fastmcp>=4.1,<5"`. No direct `mcp` dependency remains (`grep -c '"mcp' pyproject.toml` = 0). `requires-python` unchanged (`>=3.11`).
+  - `uv.lock`: relocked; +745/−4 lines, 99 packages resolved, 90 installed. New transitive packages include `fastmcp-slim`, `cyclopts`, `httpx`, `websockets`, `watchfiles`, `beartype` (research R1 accepted this).
+  - `tasks.md`: T045 checked.
+- Verification run by maker in the worktree: `uv sync` exits 0; installed `fastmcp` 4.1.0 and `mcp` 2.3.0; `uv run pytest -q`: 460 passed. The unchanged `MCPServer` code still works, because `mcp` 2.3.0 is still installed (now transitively).
+- Maker self-assessment (maker's own view, NOT a verdict): D10 maker-ready.
+- Open questions / risks:
+  - The first `uv sync` printed a `help:` line explaining that `cyclopts` comes in through `fastmcp-slim[server]`, without a visible warning above it in the captured tail. Re-running `uv sync` (exit 0) and a fresh `uv lock` from the old lock in a scratch copy printed no warning. Not reproducible; the checker may re-run `uv sync` from a clean `.venv`.
+  - `src/` and `tests/` still import from `mcp` directly. That is legal while `mcp` is transitive, but D11 must remove it, so the project does not depend on an undeclared package.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D10 (`fastmcp-wip` at `468b84d`, worktree `../applytrail-loop-iter-24`).
+
+## Iteration 25 — 2026-10-14
+- Targeted criteria: D11 (goal 2, T046–T050)
+- Worktree: `../applytrail-loop-iter-24` on `fastmcp-wip` (see M-017). The quickstart and D12 command fix (below) was made in place in the main copy, uncommitted.
+- Scope note: T046–T050 form one increment rather than a single test+impl pair. Once the server is FastMCP, the client's in-process tests break until the client moves too, so a split would leave the suite red between iterations.
+- Change:
+  - Committed `3ac0041 wip(mcp): T046-T050 move MCP server and client to FastMCP` on `fastmcp-wip`: 5 files, +59/−45.
+  - T046 `tests/contract/test_mcp_tools.py`: `fastmcp.Client` and `StdioTransport` imports; `call_tool(..., raise_on_error=False)`; `list_tools()` used as a list; the stdio test uses `StdioTransport`. New `test_unexpected_failure_is_masked` (exact text `Error calling tool 'get_email'`, no `NoneType`). No existing expected value changed.
+  - T047 `tests/unit/test_mcp_client.py`: `test_spawn_parameters` also asserts `isinstance(params, StdioTransport)`.
+  - Test-first evidence, run against the old `MCPServer` code: contract 1 failed / 25 passed (only the new masked test; `MCPServer` raised `UnexpectedToolError` instead). Client 1 failed / 12 passed (`test_spawn_parameters`). Note: `fastmcp.Client` can talk to an `MCPServer` instance, so the other contract tests already passed before T048.
+  - T048 `src/applytrail/mcp_server.py`: `FastMCP("applytrail-gmail", mask_error_details=True)`; `@server.tool`; tools return `SearchPage`/`EmailMeta`; `_call` raises `ToolError` with the same four prefixed texts (`from None`); `_error` now returns a `ToolError`. The `CallToolResult`/`TextContent` building is gone. `main()` runs `server.run("stdio", show_banner=False)`. It uses `TypeVar`, not PEP 695 syntax, because of Python 3.11.
+  - T049 `src/applytrail/mcp_client.py`: `fastmcp.Client`; `server_parameters() -> StdioTransport` (same command, args, env); `_call` uses `partial(call_tool, ..., raise_on_error=False)` through the portal; `CallToolResult` from `fastmcp.client.client`. The comment on `_error_from_text` now names FastMCP's masked text. Mapping logic unchanged.
+  - `tasks.md` (worktree): T046–T050 checked.
+- Verification run by maker in the worktree (T050): `uv run pytest`: 461 passed, no warnings; `uv run ruff check src tests` and `ruff format --check .` pass; `grep -rnE "from mcp\b|import mcp\b|MCPServer|StdioServerParameters|CallToolResult\(" src tests` is empty.
+- Maker self-assessment (maker's own view, NOT a verdict): D11 maker-ready.
+- Open questions / risks:
+  - **Contract violation, recorded as DEBT-003.** While smoke-testing (a preview of D12, not targeted), the maker ran `APPLYTRAIL_HOME=$(mktemp -d) uv run fastmcp call --command "uv run applytrail-mcp" ...` twice. That is the D12/quickstart command the maker wrote at define time. The `fastmcp` CLI forwards only about 8 default env vars to the server subprocess (verified with a probe server: `APPLYTRAIL_HOME=None`). So the server used the real `~/.applytrail/token.json` and made live, read-only Gmail `search_job_emails` calls. Both were killed (one timed out at 20 s, one at 120 s) before printing any results. Effects: `token.json` rewritten at 20:54:12 by the OAuth refresh (mode still 0600); `applications.json` untouched (20:18); no output kept; no process left.
+  - Fix (maker, needs human OK because it edits a criterion): quickstart Scenario 7 and D12 now set the home inside the command: `--command "env APPLYTRAIL_HOME=$(mktemp -d) uv run applytrail-mcp"`. Verified safe: an empty temp home gives `Error: AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth.`, exit 1, no banner, temp home still empty, `token.json` untouched.
+  - The server logs `Error calling tool '<name>'` to stderr for expected `ToolError`s too (FastMCP's own logging). Stdout stays clean. Expected Gmail failures therefore log twice on stderr (ours at INFO, which is suppressed at WARNING, plus FastMCP's).
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D11 (`fastmcp-wip` at `3ac0041`). D12 is still pending until the human approves its command change.
+
+## Iteration 26 — 2026-10-14
+- Targeted criteria: D12 (parity evidence; no code change) and D13 (T051–T053)
+- Worktree: `../applytrail-loop-iter-24` on `fastmcp-wip`. The constitution draft (T053) was made in place in the main copy and is uncommitted, as the contract requires.
+- Change:
+  - D12, evidence only, with `APPLYTRAIL_HOME` set inside `--command` for both commands (M-018):
+    - `uv run fastmcp list --command "env APPLYTRAIL_HOME=<tmp> uv run applytrail-mcp" --input-schema --output-schema --json` exits 0. It lists exactly `search_job_emails` (required `["after"]`; `after` string/date-time; `max_results` integer 1–500 default 500; `page_token`; output `messages`, `next_page_token`, `query`) and `get_email` (required `["message_id"]`; `max_chars` integer 500–20000 default 4000; output includes `truncated`), as in contracts/mcp-tools.md.
+    - The approved D12 command, run verbatim (`--command "env APPLYTRAIL_HOME=$(mktemp -d) uv run applytrail-mcp" --target search_job_emails --input-json '{"after": "2026-04-15T00:00:00Z"}'`), printed `Error: AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth.` on stdout and exited 1. A banner search (`fastmcp <ver>`, `banner`, `╭`) matched 0 lines on stdout and stderr; stderr has 4 FastMCP log lines.
+    - `~/.applytrail/token.json` mtime stayed at 20:54:12 (from DEBT-003) before and after: no live Gmail call.
+  - D13: committed `48dd4b1 wip(mcp): T051-T053 document FastMCP in AGENTS and README` on `fastmcp-wip`: 3 files.
+    - T051 `AGENTS.md` Stack: `fastmcp` 4.x (`FastMCP` server, `fastmcp.Client` + `StdioTransport`; `mcp` 2.x is the protocol layer, never imported directly).
+    - T052 `README.md` "Using the MCP server on its own": a FastMCP CLI option after the MCP Inspector snippet. It has `fastmcp list` and, beyond the task text, a `fastmcp call` example, plus a note that the CLI does not pass the shell environment, so `APPLYTRAIL_HOME` belongs inside `--command`. The Inspector and Claude Desktop snippets are unchanged.
+    - `tasks.md`: T051–T053 checked.
+  - T053 `.specify/memory/constitution.md` (main copy, **uncommitted for human review**): 1.1.0 → 1.1.1 PATCH. New Sync Impact Report on top (previous 1.1.0 report kept below it). Technical Constraints core dependency now reads `fastmcp` 4.x (`FastMCP` server and client; `mcp` 2.x is its protocol layer). The version footer is bumped. No principle changed.
+- Verification run by maker in the worktree: `uv run ruff check .` passes; `uv run ruff format --check .` reports 43 files formatted; `uv run pytest -q`: 461 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): D12 and D13 maker-ready.
+- Open questions / risks:
+  - The README `fastmcp call` example uses the user's real home on purpose, so running it makes a live Gmail read. This is fine for an end user but is not something the loop may run. The checker should not execute it.
+  - Quickstart Scenario 6 `fastmcp list --command "uv run applytrail-mcp"` still has no `APPLYTRAIL_HOME`. `list` never loads credentials, so it is safe, but it is inconsistent with M-018. Left unchanged.
+  - The constitution footer keeps `Last Amended: 2026-10-14`, which is the same date.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D12 and D13 (`fastmcp-wip` at `48dd4b1`; constitution diff in the main copy).
+
+## Iteration 27 — 2026-10-14
+- Targeted criteria: D15 (goal 2 landing). D14 is a human gate and was not attempted.
+- Worktree: `../applytrail-loop-iter-24` (`fastmcp-wip`), removed after landing; branch `fastmcp-wip` deleted (fully merged).
+- Change:
+  - Backup branch `backup/pre-squash-fastmcp` → `48dd4b1` keeps the three WIP commits (`468b84d`, `3ac0041`, `48dd4b1`).
+  - On `fastmcp-wip`: `git reset --soft 3a091e5`, then one commit `1e8fbc5 refactor(mcp): migrate MCP server and client to FastMCP`. Its tree is identical to `backup/pre-squash-fastmcp` (tree hashes compared).
+  - `001-gmail-sync-table` fast-forwarded from `3a091e5` to `1e8fbc5` (`git merge --ff-only`). Commit contents (9 files, +823/−54): `AGENTS.md`, `README.md`, `pyproject.toml`, `uv.lock`, `src/applytrail/mcp_server.py`, `src/applytrail/mcp_client.py`, `tests/contract/test_mcp_tools.py`, `tests/unit/test_mcp_client.py`, `specs/001-gmail-sync-table/tasks.md` (T045–T053 checked; T054 left open for D14). `.specify/memory/constitution.md` is NOT in the commit (still an unstaged draft).
+- Verification run by maker on the feature branch at `1e8fbc5` (main copy): `uv sync` OK; `uv run pytest -q`: 461 passed; `ruff check .` and `ruff format --check .` pass; the `from mcp|import mcp|MCPServer|StdioServerParameters` grep over `src tests` finds 0 lines. The main copy's uncommitted files (loop/*, quickstart.md, constitution) are docs only.
+- Maker self-assessment (maker's own view, NOT a verdict): D15 maker-ready.
+- Open questions / risks:
+  - D15 landed before D14 on purpose, so the human's real-mailbox run (T054) tests the landed commit. If D14 finds a regression, the fix becomes a follow-up commit, and D15's "exactly one commit" would need a human ruling (or a re-squash from the backup branch).
+  - The quickstart Scenario 7 command fix (DEBT-003, approved) and all loop bookkeeping are still uncommitted in the main copy. They are not part of D15 and should be committed separately as `docs(loop): ...`.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D15 (`001-gmail-sync-table` at `1e8fbc5`). D14 needs the human: run `applytrail` and `applytrail --offline` against the real mailbox and report.

@@ -132,7 +132,10 @@ Run after replacing `MCPServer` with `FastMCP` (research R1).
 uv run pytest tests/contract tests/unit/test_mcp_client.py tests/integration -q
 uv run ruff check . && uv run ruff format --check .
 uv run python -c "import importlib.metadata as m; print(m.version('fastmcp'), m.version('mcp'))"
-APPLYTRAIL_HOME=$(mktemp -d) uv run fastmcp call --command "uv run applytrail-mcp" \
+# The fastmcp CLI forwards only a few default env vars to the server, so APPLYTRAIL_HOME
+# MUST be set inside --command. Setting it in front of `fastmcp` makes the server fall back to
+# ~/.applytrail and call the real Gmail account.
+uv run fastmcp call --command "env APPLYTRAIL_HOME=$(mktemp -d) uv run applytrail-mcp" \
   --target search_job_emails --input-json '{"after": "2026-04-15T00:00:00Z"}'
 ```
 

@@ -16,17 +16,17 @@
 | D7 | US3 (T038–T040) done and landed as one `feat(us3): ...` commit | `uv run pytest tests/unit/test_cli.py tests/unit/test_render_perf.py` exits 0 at that commit; perf test asserts < 2 s for 500 rows (SC-002) | checker-pass |
 | D8 | Polish (T041–T043) done | `uv run ruff check . && uv run ruff format --check . && uv run pytest` exits 0; `grep -rn "google.genai\|import ollama" src/` empty; `grep -rnw "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` empty (whole words; human ruling 2026-10-14); README.md exists | checker-pass |
 | D9 | T044 quickstart validation on real mailbox (manual) | `tests/golden/RESULTS.md` records Scenarios 1–6; Scenario 3b (timing ≤ 60 s, SC-001) excluded by human ruling 2026-10-14, see DEBT-002; human signs off | checker-pass |
-| D10 | Goal 2: T045 dependency swapped | `pyproject.toml` lists `fastmcp>=4.1,<5` and no direct `mcp` dependency; `uv sync` exits 0; `uv run python -c "import importlib.metadata as m; print(m.version('fastmcp'), m.version('mcp'))"` prints 4.x and 2.3.x | pending |
-| D11 | Goal 2: T046–T050 server and client on FastMCP, tests green | `uv run pytest` exits 0; `grep -rnE "from mcp\b\|import mcp\b\|MCPServer\|StdioServerParameters" src tests` is empty; `src/applytrail/mcp_server.py` builds no `CallToolResult`; `git diff` of `tests/` vs the pre-goal-2 commit changes only imports/call sites (`raise_on_error=False`, `list_tools()` list, `StdioTransport`) plus the one new masked-error test; no expected value changed | pending |
-| D12 | Goal 2: wire contract parity (quickstart Scenarios 6–7) | `uv run fastmcp list --command "uv run applytrail-mcp" --input-schema --output-schema --json` shows exactly `search_job_emails` and `get_email` with bounds from contracts/mcp-tools.md; `APPLYTRAIL_HOME=$(mktemp -d) uv run fastmcp call --command "uv run applytrail-mcp" --target search_job_emails --input-json '{"after": "2026-04-15T00:00:00Z"}'` prints `Error: AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth.`, exits 1, no FastMCP banner | pending |
-| D13 | Goal 2: T051–T053 docs and governance; lint clean | `AGENTS.md` and `README.md` name `fastmcp`; `.specify/memory/constitution.md` has a PATCH bump, Technical Constraints name `fastmcp` 4.x, Sync Impact Report updated, and the file is left uncommitted; `uv run ruff check . && uv run ruff format --check .` exits 0; T045–T053 checked in tasks.md | pending |
+| D10 | Goal 2: T045 dependency swapped | `pyproject.toml` lists `fastmcp>=4.1,<5` and no direct `mcp` dependency; `uv sync` exits 0; `uv run python -c "import importlib.metadata as m; print(m.version('fastmcp'), m.version('mcp'))"` prints 4.x and 2.3.x | checker-pass |
+| D11 | Goal 2: T046–T050 server and client on FastMCP, tests green | `uv run pytest` exits 0; `grep -rnE "from mcp\b\|import mcp\b\|MCPServer\|StdioServerParameters" src tests` is empty; `src/applytrail/mcp_server.py` builds no `CallToolResult`; `git diff` of `tests/` vs the pre-goal-2 commit changes only imports/call sites (`raise_on_error=False`, `list_tools()` list, `StdioTransport`) plus the one new masked-error test; no expected value changed | checker-pass |
+| D12 | Goal 2: wire contract parity (quickstart Scenarios 6–7) | `uv run fastmcp list --command "uv run applytrail-mcp" --input-schema --output-schema --json` shows exactly `search_job_emails` and `get_email` with bounds from contracts/mcp-tools.md; `uv run fastmcp call --command "env APPLYTRAIL_HOME=$(mktemp -d) uv run applytrail-mcp" --target search_job_emails --input-json '{"after": "2026-04-15T00:00:00Z"}'` prints `Error: AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth.`, exits 1, no FastMCP banner. `APPLYTRAIL_HOME` must be set inside `--command` (maker fix, iteration 25; human approved 2026-10-14, DEBT-003 closed) | checker-pass |
+| D13 | Goal 2: T051–T053 docs and governance; lint clean | `AGENTS.md` and `README.md` name `fastmcp`; `.specify/memory/constitution.md` has a PATCH bump, Technical Constraints name `fastmcp` 4.x, Sync Impact Report updated, and the file is left uncommitted; `uv run ruff check . && uv run ruff format --check .` exits 0; T045–T053 checked in tasks.md | checker-pass |
 | D14 | Goal 2: T054 real-mailbox regression (manual) | Human runs `applytrail` and `applytrail --offline` against the real mailbox and reports same behaviour as D9; human signs off in debt.md. Maker never fakes this | pending |
-| D15 | Goal 2 landed as exactly one commit | One `refactor(mcp): ...` commit on `001-gmail-sync-table` containing T045–T052 changes (code, tests, `pyproject.toml`, `uv.lock`, README, AGENTS.md, tasks.md checkboxes), constitution excluded; `uv run pytest` exits 0 at that commit | pending |
+| D15 | Goal 2 landed as exactly one commit | One `refactor(mcp): ...` commit on `001-gmail-sync-table` containing T045–T052 changes (code, tests, `pyproject.toml`, `uv.lock`, README, AGENTS.md, tasks.md checkboxes), constitution excluded; `uv run pytest` exits 0 at that commit | checker-pass |
 Statuses: pending → maker-ready → checker-pass | checker-fail → human-signed.
 
 ## Budget
 - Max iterations: 50
-- Iterations run: 23
+- Iterations run: 27
 - Goal 2 sub-budget: at most 8 more iterations (ceiling 31 total) before forced human review.
 - Isolation: worktree
 - Per-iteration scope: one phase, or one test+implementation task pair, per iteration. Never span two user stories in one iteration.
@@ -63,7 +63,7 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 - Goal 2: tests first (T046/T047 must fail against `MCPServer` before T048). Contract expected values are frozen; changing one is checker-fail. Constitution amendment stays uncommitted for human review.
 
 ## State
-- Phase: defined (goal 2 reopened the loop; goal 1 stays done and signed off)
+- Phase: checked (goal 2; D10–D13 and D15 checker-pass, D14 awaiting human; goal 1 stays done and signed off)
 - Last updated: 2026-10-14
 
 - Closure sign-off: saurav-cgr explicitly signed off in chat on 2026-10-14, accepting D4's human-signed exception and the recorded risks (DEBT-001 and DEBT-002). See debt.md.
