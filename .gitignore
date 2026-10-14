@@ -7,3 +7,8 @@ __pycache__/
 credentials.json
 token.json
 .applytrail/
+
+# Local agent tooling
+.agents/
+.claude/
+.serena/
