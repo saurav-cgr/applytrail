@@ -134,3 +134,20 @@ now ready for the checker.
   - No read timeout is set on MCP calls; a hung Gmail request waits on googleapiclient's own socket timeout.
   - `anyio` is imported directly; it is a dependency of `mcp`, not declared in `pyproject.toml` (same situation as `httplib2`).
 - Handoff: continue maker (D3 incomplete).
+
+## Iteration 8 — 2026-10-14
+- Targeted criteria: D3 (partial: T021–T022 test+implementation pair)
+- Worktree: `../applytrail-loop-iter-8` on `us1-wip` (M-009); removed after commit.
+- Change (commit on `us1-wip`: `wip(us1): Ollama extractor with preflight, prompt and error mapping (T021-T022)`):
+  - Tests first, confirmed failing at collection (`ModuleNotFoundError: applytrail.extractor`): `tests/unit/test_extractor.py`. Fake transport `(method, url, body, timeout) -> (status, payload)` replaying responses or raising; injected `sleep`. Covers everything T021 lists, plus: untagged model name matching `:latest`; `tools` absent from the body; `</EMAIL>` (any case) and `</email>` in the sender neutralised; malformed 200 payloads; 503 text bodies; `URLError`-wrapped resets; and the default `urllib_transport` against a stub `http.server` on 127.0.0.1 (200 JSON, 500 text, connection refused, full `check_ready` + `extract`). No live Ollama.
+  - `src/applytrail/extractor.py`: `Extractor` Protocol (`runtime_checkable`), `OllamaExtractor(settings, transport=None, sleep=time.sleep)`, `SYSTEM_PROMPT` (contract text plus the status table as prose), `build_user_message`, `urllib_transport`.
+  - `tasks.md`: T021, T022 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 258 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T021–T022 done. D3 not ready (T023–T024, T026–T027 remain; T028+ blocked on D4). The prompt has never met a real model; T025 (D4) is the first real measurement.
+- Open questions / risks:
+  - `check_ready` uses a 10 s timeout for `GET /api/tags`; the contract's 120 s applies to chat requests. A preflight that hangs 120 s before saying "not running" seemed wrong.
+  - A non-404, non-5xx error (e.g. 400 from a bad request) raises `ProviderUnavailable("unresponsive")` without retry, so the run stops and saves progress instead of skipping every email silently. The contract does not list 4xx other than 404.
+  - The memory check runs on any non-200 body, not only 500.
+  - `ExtractionInvalid` carries only the exception type name, never model output or email text.
+  - `SYSTEM_PROMPT` writes field and status names bare (`is_job_application`, `unknown`) rather than in backticks, and "≤ 120 chars" as "at most 120 characters". Wording beyond the contract's fixed text is the maker's.
+- Handoff: continue maker (D3 incomplete). Next: T023 (golden set) and T024 (eval script), then the human-run T025 gate.
