@@ -14,6 +14,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V007 | 16 | D5 | Exact commit d3fa14b in clean detached worktree: 428 pytest tests passed, Ruff lint/format passed; git history has exactly one feat(us1) commit; full non-loop tree matches reviewed 865e255; task and changed-path audit passed | pass | high | 2026-10-14 |
 | V008 | 19 | D6 | Clean detached worktree at 7ebc719: required 66 tests and full 449 tests pass, Ruff passes; single US2 commit and task audit pass; independent search-failure probes retain stale badges and count prior additions in latest run, violating T036/data-model | fail | high | 2026-10-14 |
 | V009 | 20 | D6 | Clean detached worktree at fae030f: required 68 tests and full 451 tests pass, Ruff passes; single US2 commit/task audit; nine independent search, pagination and progress stop probes plus save/load/render and unchanged repeat pass | pass | high | 2026-10-14 |
+| V010 | 22 | D7 | Clean detached worktree at fa757fd: required 35 tests and full 460 tests pass, Ruff passes; single US3 commit/task audit; independent fresh-process offline probes forbid sockets, subprocesses, writes and network imports; 500 rows render in 0.27–0.30 s | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -383,6 +384,56 @@ D4 retains its human-accepted DEBT-001 deviation. D7–D9 remain pending and wer
 not graded. Continue `/speckit.loop.run` for US3 (D7); passing D6 does not close
 the loop. Closure still requires remaining criteria and `/speckit.loop.guard`
 with human sign-off.
+
+Live Gmail/Ollama and minimum-Python execution were not checked. Accepted
+extraction injection risk and the planned constitution/provider amendment remain.
+
+
+## Iteration 22 independent check — 2026-10-14
+
+This checker did not write the US3 implementation or maker iterations 21–22.
+D7 is the only maker-ready criterion; configuration requires one independent
+vote. Verification ran in a clean detached worktree at exact story commit
+`fa757fd`.
+
+### D7: pass (high confidence)
+
+- Independent full pytest: 460 passed in 7.50 seconds on Python 3.14.7.
+  Required CLI/performance suites: 35 passed in 0.84 seconds. Ruff lint and
+  format passed (42 files). The performance test asserts under 2 seconds for
+  all 500 rows through the real offline CLI.
+- Feature history contains exactly one `feat(us3):` commit (`fa757fd`), with
+  five files confined to CLI, rendering, their tests and T038–T040 checkmarks.
+  The feature tip differs from this story commit only in iterations.md,
+  loop.md and memory.md. Source inspection confirms the offline branch loads and renders
+  without constructing Gmail, MCP or Ollama clients or saving the store.
+- Independent fresh-interpreter probes installed an audit hook before importing
+  the CLI, rejecting socket activity, child-process creation, filesystem writes,
+  mkdir, chmod, removal and rename. Each successful invocation also asserted
+  that sync, extractor, mcp_client, mcp and googleapiclient were not imported.
+  Missing home, invalid schema, invalid encoding, never-synced empty and synced
+  empty stores returned the expected exit codes/messages without changing the
+  store bytes, mtime or mode. Missing-home invocation created no directory;
+  corrupt stores exited 5 with an actionable message and no traceback.
+- Independent synthetic 500-row probes covered complete, incomplete/pending=230
+  and incomplete/pending=0 states in Asia/Kolkata. Fresh processes rendered all
+  rows in newest-first order, preserved both stored badge types, treated invalid
+  Rich tags in roles literally, converted 08:02 UTC to 13:32 local time and
+  produced lines no wider than 100 columns. Elapsed time including interpreter
+  startup was 0.294, 0.276 and 0.273 seconds respectively. Store contents,
+  nanosecond mtime and mode remained unchanged; forbidden-action hooks held.
+- Reviewed the maker's empty-store distinction: a store from a completed sync
+  with zero applications prints the existing empty-table message and last-sync
+  footer; a never-synced empty store prints the first-sync hint. This satisfies
+  US3's saved-data versus no-saved-data scenarios. The no-pending incomplete
+  footer accurately names the unfinished state and the resume command.
+
+No failures, uncertain criteria or new debt. D7 is checker-pass; phase is checked.
+Implementation and iterations.md were not edited. Earlier verdicts and D4's
+human-accepted DEBT-001 remain in force. D8 and D9 remain pending and were not
+fully graded. Continue `/speckit.loop.run` for polish (D8). The loop remains open;
+closure still requires the remaining gates and `/speckit.loop.guard` with human
+sign-off.
 
 Live Gmail/Ollama and minimum-Python execution were not checked. Accepted
 extraction injection risk and the planned constitution/provider amendment remain.
