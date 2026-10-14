@@ -9,6 +9,8 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V002 | 2 | D2 | `git log --oneline -8`, `git show --stat 68e21e2`: one foundation commit, 34 files confined to T001–T014; `git diff 68e21e2 HEAD -- src tests pyproject.toml uv.lock specs/001-gmail-sync-table/tasks.md` empty | pass | high | 2026-10-14 |
 | V003 | 3 | D1 | Independent uv sync exit 0; targeted pytest 82 passed; full pytest 115 passed; Ruff lint/format exit 0; source/task audit and disposable-directory schema, completion, corrupt-destination, temporary-symlink/failed-rename probes | pass | high | 2026-10-14 |
 | V004 | 3 | D2 | git log and git show --stat 7818ce5: exactly one foundation commit, 34 Phase 1–2 files; git diff 7818ce5 HEAD -- src tests pyproject.toml uv.lock specs/001-gmail-sync-table/tasks.md empty | pass | high | 2026-10-14 |
+| V005 | 14 | D3 | Clean detached worktree at us1-wip b570565; independent full pytest 424 passed, Ruff lint/format passed, US1 task checkboxes audited; synthetic role, debug privacy and malformed .env probes reproduce failures below | fail | high | 2026-10-14 |
+| V006 | 15 | D3 | Clean detached worktree at us1-wip 865e255; independent full pytest 428 passed, Ruff lint/format passed, US1 tasks checked; literal-role, exception-chain/notes privacy and real malformed .env probes passed | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -136,3 +138,113 @@ unchecked. Continue with `/speckit.loop.run`. This is not loop closure: all crit
 pass before `/speckit.loop.guard` and human sign-off. No live Gmail/Ollama or minimum-Python
 runtime checks were performed. The existing constitution/provider mismatch remains a
 planned governance follow-up, not a completed amendment.
+
+## Iteration 14 independent check — 2026-10-14
+
+This checker session did not produce the implementation under review. The feature branch
+contains the loop records, while the implementation is on `us1-wip` at `b570565`.
+Checks ran in a clean detached worktree at that exact commit, not against the older
+implementation on the feature branch. Configuration requires one independent vote.
+No implementation or `iterations.md` changes were made.
+
+### D3: fail (high confidence)
+
+`uv run pytest` passed all 424 tests, including the required Gmail, MCP contract,
+extractor, merge, first-run sync, render and CLI suites. Both Ruff checks passed
+(40 files formatted). All T015–T024 and T026–T033 checkboxes are checked on `us1-wip`.
+Source inspection confirmed the read-only Gmail tools and deterministic orchestration.
+Passing existing tests does not cover the following adversarial failures.
+
+1. **Untrusted role text is interpreted as Rich markup.** `render.py:47` passes
+   `app.role` directly to `Table.add_row`, unlike the company cell, which uses `Text`.
+   A valid extraction with role `Engineer [/bad]` passes validation and merge, but
+   `render_table` raises `MarkupError`: `closing tag '[/bad]' at position 9 doesn't
+   match any open tag`. Role `[bold]Engineer[/bold]` silently loses its literal tags.
+   This breaks T030–T031's readable rendering for valid stored data and the untrusted
+   data boundary. Smallest fix: wrap the role cell in `Text`, with a regression test
+   proving literal brackets render without an exception or unintended styling.
+2. **Debug tracebacks persist full email content.** With `APPLYTRAIL_DEBUG=1`, a
+   synthetic sync exception whose message is a complete email body causes
+   `cli.py:117` to write that body verbatim into `debug.log`. The probe asserted
+   the complete synthetic body was present and confirmed exit 1. File permissions
+   do not satisfy Constitution Principle V's prohibition on logging full bodies.
+   Smallest fix: record traceback frames and exception types without arbitrary
+   exception messages, including chained exceptions; add a privacy regression test.
+   Debug opt-in does not waive this rule.
+3. **Setup failures bypass the CLI error handler.** In a disposable current
+   directory, an actual `.env` containing bytes `APPLYTRAIL_MODEL=\xff\n` makes
+   `cli.main([])` raise `UnicodeDecodeError` instead of returning an error code.
+   `load_dotenv` and `Settings.from_env` run before the `try` at `cli.py:41`.
+   The installed entry point therefore prints a stack trace for this setup failure,
+   violating the terminal error contract and T032–T033's unexpected-error handling.
+   Smallest fix: include environment loading and settings construction in guarded
+   startup, with a fallback error message when settings are unavailable; test a real
+   malformed `.env` without contacting services.
+
+The role probes constructed `EmailMeta`, `Extraction` and `Store.empty()`, called
+`merge.apply`, then rendered through `Console(file=StringIO(), width=100, no_color=True)`.
+The privacy probe used a temporary `APPLYTRAIL_HOME`, patched `_sync_command` to raise
+`RuntimeError` containing synthetic body text, and inspected the resulting log. The
+environment probe changed into a temporary directory, wrote the invalid bytes and
+patched `_sync_command` to prohibit service calls. All probes used installed code at
+`b570565`. The uv cache access initially failed in the sandbox; reruns used approved
+escalation. No real mailbox, credentials, application store or live model was accessed.
+
+### Scope and routing
+
+Only D3 was maker-ready and targeted. D1/D2 retain their earlier verdicts; D4 retains
+the human-accepted deviation recorded in DEBT-001. Pending US2 behavior (badge tracking,
+pending counts and interruption metadata), US3 offline behavior and D5 commit squashing
+were not graded as D3 failures. No targeted criterion is uncertain; no new debt opened.
+
+Run `/speckit.loop.run` to fix these failures before the US1 squash, then request an
+independent re-check. D3 is `checker-fail`; phase is `checked`. This is not loop closure.
+Live Gmail/Ollama, real-mail accuracy and minimum-Python execution remain unchecked.
+
+## Iteration 15 independent re-check — 2026-10-14
+
+This checker session did not produce maker iteration 15. Checked `us1-wip` at
+`865e255` in a clean detached worktree. The feature branch holds the current loop
+records but has not yet integrated US1. One independent vote is required. Existing
+uncommitted verdict text was preserved; implementation and `iterations.md` remain
+untouched.
+
+### D3: pass (high confidence)
+
+Independent `uv run pytest` passed all 428 tests, including every suite named by D3.
+Ruff lint and format checks exited 0 (40 files formatted). Required US1 task
+checkboxes are checked on the reviewed branch. The diff from `b570565` is confined
+to the three V005 fixes, their regression tests and the debug-log contract wording.
+
+Independent adversarial probes against installed code established:
+
+- Roles `Engineer [/bad]`, `[bold]Engineer[/bold]` and
+  `[link=https://example.test]X` remain literal `Text` cell values and render
+  without markup exceptions. This resolves V005's role rendering failure.
+- With debug enabled, explicit and implicit exception chains containing a complete
+  synthetic email body retain traceback frames and exception types, while omitting
+  that body. Exception notes also omit the body. A cyclic cause chain terminates
+  and retains both exception types. Each CLI run returns 1 with one stderr line;
+  the resulting log has mode 0600. This resolves V005's exception-message leak.
+- An actual `.env` with bytes `APPLYTRAIL_MODEL=\xff\n` in a temporary current
+  directory returns 1 with one actionable stderr line naming `UnicodeDecodeError`,
+  without a traceback. A patched sync entry point confirms no services are called.
+  This resolves V005's unguarded environment-loading failure.
+
+Probes used `TemporaryDirectory`, synthetic `EmailMeta`/`Extraction`, `StringIO`
+consoles, environment patches and a patched `_sync_command`. No real application
+store, mailbox, credentials or live model was accessed. The implementation tests
+retain all three regression cases. V006 supersedes V005 for current D3 code.
+
+### Scope and routing
+
+No targeted failures or uncertain criteria; no new comprehension debt. D1/D2 retain
+their prior verdicts; D4 retains its human-accepted deviation (DEBT-001). D5–D9 are
+pending and were not graded. In particular, this pass does not certify the future
+US2 interruption/badge behavior, US3 offline command or the US1 commit boundary.
+
+Continue with `/speckit.loop.run` for D5, integrating US1 as exactly one story commit.
+The loop is not done; final closure still requires all remaining criteria and
+`/speckit.loop.guard` with human sign-off. Live Gmail/Ollama, real-mail accuracy and
+minimum-Python execution remain unchecked. The accepted extraction injection risk
+and planned constitution/provider amendment remain outstanding limitations.
