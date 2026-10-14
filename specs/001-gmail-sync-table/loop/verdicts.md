@@ -12,6 +12,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V005 | 14 | D3 | Clean detached worktree at us1-wip b570565; independent full pytest 424 passed, Ruff lint/format passed, US1 task checkboxes audited; synthetic role, debug privacy and malformed .env probes reproduce failures below | fail | high | 2026-10-14 |
 | V006 | 15 | D3 | Clean detached worktree at us1-wip 865e255; independent full pytest 428 passed, Ruff lint/format passed, US1 tasks checked; literal-role, exception-chain/notes privacy and real malformed .env probes passed | pass | high | 2026-10-14 |
 | V007 | 16 | D5 | Exact commit d3fa14b in clean detached worktree: 428 pytest tests passed, Ruff lint/format passed; git history has exactly one feat(us1) commit; full non-loop tree matches reviewed 865e255; task and changed-path audit passed | pass | high | 2026-10-14 |
+| V008 | 19 | D6 | Clean detached worktree at 7ebc719: required 66 tests and full 449 tests pass, Ruff passes; single US2 commit and task audit pass; independent search-failure probes retain stale badges and count prior additions in latest run, violating T036/data-model | fail | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -283,3 +284,61 @@ This is not loop closure; final closure still requires the remaining criteria an
 
 Live Gmail/Ollama and minimum-Python execution were not checked. The accepted
 extraction injection risk and planned constitution/provider amendment remain.
+
+## Iteration 19 independent check — 2026-10-14
+
+This checker did not produce maker iterations 17–19. Only D6 was maker-ready;
+configuration requires one independent vote. Checks ran in a clean detached
+worktree at the exact story commit `7ebc719`.
+
+### D6: fail (high confidence)
+
+Independent required merge/incremental-sync/render suites: 66 passed. Full pytest:
+449 passed in 7.01 seconds on Python 3.14.7. Ruff lint and format checks passed
+(41 files). History has exactly one `feat(us2):` commit, with seven files scoped
+to US2 and T034–T037 checked. The squash tree matches `backup/pre-squash-us2`
+outside loop records; later changes also affect only loop records. An independent
+successful repeat using the same fixture confirmed unchanged applications,
+zero read/added/updated counts and empty badge lists.
+
+**Failure: badges reset after search, contrary to the run-start contract.**
+`src/applytrail/sync.py:55–59` calls `_candidates` and the initial progress callback
+before clearing `sync.added`/`sync.updated`. T036 explicitly says to reset at run
+start; data-model.md's SyncState section says the lists represent the latest run
+and reset at the start of every sync run. There is no approved exception for
+search failures. The maker record flags this decision but does not amend the
+contract. The existing test
+`test_network_failure_during_search_keeps_previous_badges_and_state` asserts the
+conflicting behavior rather than verifying the contract.
+
+Independent reproduction at `7ebc719`: perform a successful first run using
+`confirm_acme_backend`, then copy that store and have the next search raise each
+of `NetworkUnavailable`, `GmailRateLimited` and `KeyboardInterrupt`. All three
+retain `added=['acme|backend engineer']`; `_finish` records `read=0, added=1` for
+the latest, incomplete run. Saving/loading each result through the real store
+and rendering at 100 columns with no color still displays `NEW`. The save in
+this probe was explicit; source inspection confirms the CLI saves exits 3, 4
+and 130 and displays the table on exit 4. Thus a rate limit before processing
+any email displays a stale badge, and persisted run counts describe a prior
+run's additions as this run's work. No live services or user data were used.
+
+Smallest fix for the maker: initialize the start snapshot and clear both badge
+lists before search or any progress callback can fail. Replace the preservation
+expectation with regression checks for empty badges and zero added/updated
+counts on search failure/Ctrl-C, preserving application data, processed IDs and
+checkpoint. Keep US2's single-story commit boundary when landing the correction;
+request an independent re-check. The checker made no implementation or
+`iterations.md` changes.
+
+### Scope and routing
+
+No uncertain criteria or new debt. Using `network` for non-Ollama/non-interrupt
+AppErrors is not an additional failure: the current schema has no rate-limit
+literal and the value does not drive fetching. D1–D3/D5 retain earlier passes;
+D4 retains human-accepted DEBT-001. D7–D9 remain pending and were not graded.
+Run `/speckit.loop.run` to address V008. D6 is `checker-fail`; phase is `checked`.
+The loop is not done.
+
+Live Gmail/Ollama, real-mail accuracy and minimum-Python execution were not
+checked. Accepted extraction injection risk and the planned constitution/provider
+amendment remain outstanding.
