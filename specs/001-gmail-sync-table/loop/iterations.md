@@ -151,3 +151,21 @@ now ready for the checker.
   - `ExtractionInvalid` carries only the exception type name, never model output or email text.
   - `SYSTEM_PROMPT` writes field and status names bare (`is_job_application`, `unknown`) rather than in backticks, and "≤ 120 chars" as "at most 120 characters". Wording beyond the contract's fixed text is the maker's.
 - Handoff: continue maker (D3 incomplete). Next: T023 (golden set) and T024 (eval script), then the human-run T025 gate.
+
+## Iteration 9 — 2026-10-14
+- Targeted criteria: D3 (partial: T023–T024); prepares D4 (T025, human-run)
+- Worktree: `../applytrail-loop-iter-9` on `us1-wip` (M-009); removed after commit.
+- Change (commit on `us1-wip`: `wip(us1): golden set and extractor eval script (T023-T024)`):
+  - `tests/golden/01_…json`–`33_…json` (T023): 33 synthetic emails in `EmailMeta` shape plus `label {is_job_application, company, status}`. 20 job emails covering all 7 statuses (applied 4, in_review 3, assessment 3, interview 3, offer 2, rejected 3, withdrawn 2), with Greenhouse, Lever, Workday, Ashby and SmartRecruiters senders and unusual phrasings (e.g. "we have your materials", "won't be progressing", "share your availability"). 13 non-job: two job alerts, newsletter, two recruiter cold outreach, interview-course marketing, two injection attempts, event ticket, order confirmation, rental application, conference speaker application, talent-community signup. Made-up people and companies; `.example` domains except the real ATS vendor sending domains. Generated once by a scratchpad script, not kept.
+  - `tests/golden/RESULTS.md`: header and empty table only. No result rows; the maker never runs the live model.
+  - Tests: `tests/unit/test_golden_set.py` (count ≥ 30, ≥ 18 job / ≥ 12 non-job, all statuses, ATS senders, per-case shape, only `.example`/ATS addresses, unique IDs). Written after the data, so it never failed; it guards the set against later edits. `tests/unit/test_eval_extractor.py` written before the script and confirmed failing (`FileNotFoundError`): scoring with `norm_company`, accuracy over job emails only, 90% inclusive threshold, leaks counted only when a non-job email would make a row, invalid output counted as skipped and wrong, mean seconds, report text without email content.
+  - `scripts/eval_extractor.py` (T024): `load_golden`, `parse_cases`, `makes_row`, `evaluate(cases, extract, clock)`, `format_report` (prints a row to paste into RESULTS.md), `main()` (exit 1 below threshold or on any leak; preflight errors exit with their code).
+  - `tasks.md`: T023, T024 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 343 passed. `OLLAMA_HOST=http://127.0.0.1:9 uv run python scripts/eval_extractor.py` prints the not-running message and exits 2 (no model contacted).
+- Maker self-assessment (maker's own view, NOT a verdict): T023–T024 done. All automatable D3 tasks before the gate are done except T026–T027 (merge), which do not depend on D4. D4 needs the human.
+- Open questions / risks:
+  - **SC-003 says "real-world (anonymized)" emails. This set is synthetic.** A high score on it does not prove accuracy on the user's real mail. Recommend the human adds anonymized real emails before signing D4, or accepts the synthetic set explicitly in debt.md.
+  - The maker wrote both the prompt and the golden set, so the set may share the prompt's blind spots.
+  - `makes_row` duplicates the rule `merge.classify` (T027) will implement; T027 should make the script call `merge.classify` instead.
+  - Accuracy counts a job email as wrong for both company and status when it yields no row (invalid, not-job, empty company, unknown status). The task text does not define this.
+- Handoff: ready for the human gate. **T025 (D4)**: with Ollama running and `qwen3:4b` pulled, run `uv run python scripts/eval_extractor.py`, paste the printed row into `tests/golden/RESULTS.md`, and sign off in debt.md. Maker can continue with T026–T027 meanwhile; T028+ stays blocked until D4 is human-signed.
