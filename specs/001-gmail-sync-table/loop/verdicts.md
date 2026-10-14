@@ -22,6 +22,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V015 | 26 | D12 | Clean fastmcp-wip at 48dd4b1: real FastMCP CLI over isolated stdio lists exactly two tools with contractual schemas; call exits 1 with exact AUTH_REQUIRED text; no banner; explicitly passed temporary home stays empty | pass | high | 2026-10-14 |
 | V016 | 26 | D13 | Migration docs and T045–T053 checkboxes audited at 48dd4b1; main-copy constitution 1.1.1 PATCH report and unchanged principles verified, draft unstaged/uncommitted; Ruff passes and 461 tests pass | pass | high | 2026-10-14 |
 | V017 | 27 | D15 | Feature branch at 1e8fbc5: exactly one refactor(mcp) commit since 3a091e5; tree identical to reviewed 48dd4b1 and backup; exact nine intended paths, constitution excluded; no implementation drift; 461 pytest tests and Ruff pass | pass | high | 2026-10-14 |
+| V018 | 27 (post-iteration human gate) | D14 | Durable report/sign-off at 7c363e4 names both real-mailbox commands and landed migration 1e8fbc5; T054 checked; no source/test/dependency drift; 461 tests and Ruff pass; live run not independently reproduced | pass | medium | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -719,3 +720,48 @@ Live Gmail/Ollama, minimum-Python execution and fresh-environment installation
 were not checked. Accepted DEBT-001 injection leakage and DEBT-002 unmeasured
 timing remain. Direct receipt: verified the single landed commit and its tested
 tree against D15 without expanding implementation scope.
+
+
+## Post-iteration 27 manual gate independent check — 2026-10-14
+
+This checker did not conduct or record the human regression run. D14 is the only
+maker-ready criterion. The latest numbered maker iteration remains 27. One
+independent vote is required. The human report and sign-off are durably committed
+in `7c363e4 docs(loop): record D14 real-mailbox sign-off`, following migration
+`1e8fbc5`. The executable tree has no drift from the checked migration.
+
+### D14: pass (medium confidence)
+
+- The current criterion requires a human real-mailbox run of both applytrail
+  and applytrail --offline, a report of behavior matching D9, and sign-off in
+  debt.md. The dated D14 sign-off row identifies saurav-cgr, the landed FastMCP
+  commit 1e8fbc5, and the exact report:
+  "applytrail and applytrail --offline are working as before".
+- The post-iteration human report in iterations.md agrees with that scope and
+  date; tasks.md checks T054. Independent assertions verify both command names,
+  attribution, commit identity, task completion and the explicit absence of
+  timings. The report does not claim a measured performance result.
+- Adversarial audit looks for a missing command, absent sign-off, a report from
+  the old MCP implementation, fabricated timing and implementation changes
+  after the reported run. None is found. Git comparisons show no source, test,
+  manifest or lock changes between migration 1e8fbc5 and the current tree.
+- Full pytest passes: 461 tests in 5.76 seconds. Ruff lint and format pass
+  (43 files). Tests use fakes; no live Gmail or Ollama call is made by the checker.
+- This is verification of the criterion's durable human report and sign-off,
+  not independent reproduction of the live behavior. The maker's store counts,
+  file modes and completion spot check are not used as independent evidence.
+  Confidence remains medium because the checker did not observe the human run.
+
+No failures, uncertain criteria or new debt. D14 becomes checker-pass and Phase
+becomes checked. Only loop.md and verdicts.md are edited by this checker. All
+migration criteria D10–D15 now have checker passes; D4 retains its explicitly
+accepted human-signed exception. Recommend `/speckit.loop.guard` for the required
+comprehension checkpoint and human migration closure sign-off. Passing the
+checker does not declare the loop done; the earlier goal-1 closure does not
+close the migration.
+
+The constitution remains an uncommitted human-review draft. Live regression was
+not independently repeated. Accepted DEBT-001 injection leakage and DEBT-002
+unmeasured speed/memory remain; DEBT-003 is closed with human acknowledgement
+and the approved isolation fix. Direct receipt: verified the required human
+report against D14 and recorded V018 without expanding implementation scope.
