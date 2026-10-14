@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-013",
+  "thread_id": "thread-golden-013",
+  "date": "2026-07-07T14:00:00Z",
+  "sender": "Meridian Labs Recruiting <recruiting@meridianlabs.example>",
+  "subject": "Onsite interview - Meridian Labs",
+  "body_text": "Hi Sam, Congratulations on progressing! We'd like to invite you to an onsite interview loop for the Machine Learning Engineer position on July 21. The day includes four sessions. Please confirm your attendance. Meridian Labs Recruiting",
+  "label": {
+    "is_job_application": true,
+    "company": "Meridian Labs",
+    "status": "interview"
+  }
+}

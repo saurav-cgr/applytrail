@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-018",
+  "thread_id": "thread-golden-018",
+  "date": "2026-07-28T07:55:00Z",
+  "sender": "Pinecrest Bank Recruiting <careers@pinecrestbank.example>",
+  "subject": "Data Analyst opening - outcome",
+  "body_text": "Hello Sam, Thank you for considering Pinecrest Bank. Having reviewed all submissions for the Data Analyst opening, we won't be progressing your application at this time. Kind regards, Pinecrest Bank People Team",
+  "label": {
+    "is_job_application": true,
+    "company": "Pinecrest Bank",
+    "status": "rejected"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-023",
+  "thread_id": "thread-golden-023",
+  "date": "2026-06-07T07:30:00Z",
+  "sender": "The Weekly Stack <newsletter@weeklystack.example>",
+  "subject": "This week: hiring trends, interview tips and more",
+  "body_text": "In this issue: why engineering hiring slowed in Q2, five interview tips from hiring managers, and a deep dive on offer negotiation. Read online. You are receiving this newsletter because you signed up.",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

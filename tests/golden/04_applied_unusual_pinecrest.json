@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-004",
+  "thread_id": "thread-golden-004",
+  "date": "2026-06-02T08:45:00Z",
+  "sender": "Pinecrest Bank Recruiting <careers@pinecrestbank.example>",
+  "subject": "Your materials - Data Analyst opening",
+  "body_text": "Hello Sam, This note confirms we have your materials for the Data Analyst opening in our Risk team. A member of the team will look at them over the coming weeks. Kind regards, Pinecrest Bank People Team",
+  "label": {
+    "is_job_application": true,
+    "company": "Pinecrest Bank",
+    "status": "applied"
+  }
+}

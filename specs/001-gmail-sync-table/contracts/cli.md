@@ -36,7 +36,7 @@ Progress during sync goes to stderr (Rich status spinner) so stdout stays clean.
 | Company | ≤ 28 | Ellipsized; hyperlink to Gmail thread where supported |
 | Role | ≤ 30 | Ellipsized; `Unknown` when null |
 | Status | 12 | Display label from the Status enum |
-| Last activity | 10 | `YYYY-MM-DD` in local time |
+| Last seen | 10 | `YYYY-MM-DD` in local time |
 
 Total width ≤ 100 columns including borders. Status and badges are text; colour only reinforces.
 
@@ -90,6 +90,6 @@ Inspector, Claude Desktop). See [mcp-tools.md](mcp-tools.md).
 | `APPLYTRAIL_HOME` | `~/.applytrail` | Data folder: store, token, credentials |
 | `APPLYTRAIL_MODEL` | `qwen3:4b` | Ollama model tag used for extraction |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama server (Ollama's own variable). A non-loopback host prints a privacy warning |
-| `APPLYTRAIL_DEBUG` | unset | `1` writes tracebacks to `$APPLYTRAIL_HOME/debug.log` |
+| `APPLYTRAIL_DEBUG` | unset | `1` writes tracebacks (frames and exception types, no messages) to `$APPLYTRAIL_HOME/debug.log` |
 
 A `.env` file in the current directory is loaded if present.

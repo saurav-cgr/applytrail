@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-015",
+  "thread_id": "thread-golden-015",
+  "date": "2026-07-16T10:05:00Z",
+  "sender": "Jonas Weller <jonas@saltmarshstudios.example>",
+  "subject": "Following up on our call",
+  "body_text": "Hi Sam, Great to talk earlier. As I mentioned on the phone, Saltmarsh Studios is pleased to extend you an offer for the Technical Artist role. You'll get the written details by Friday. Best, Jonas, Saltmarsh Studios",
+  "label": {
+    "is_job_application": true,
+    "company": "Saltmarsh Studios",
+    "status": "offer"
+  }
+}

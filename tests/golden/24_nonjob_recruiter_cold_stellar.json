@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-024",
+  "thread_id": "thread-golden-024",
+  "date": "2026-06-11T15:15:00Z",
+  "sender": "Dana Kirsch <dana@talentbridge.example>",
+  "subject": "Exciting opportunity at Stellar Fintech",
+  "body_text": "Hi Sam, I came across your profile and think you'd be a great fit for a Staff Engineer role at Stellar Fintech, a fast-growing startup. Would you be open to a quick chat this week? Best, Dana, TalentBridge Recruiting",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

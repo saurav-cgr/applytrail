@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-008",
+  "thread_id": "thread-golden-008",
+  "date": "2026-06-15T09:00:00Z",
+  "sender": "Orbital Freight Hiring <hiring@orbitalfreight.example>",
+  "subject": "Next step: online coding assessment",
+  "body_text": "Hi Sam, Thanks again for applying to Orbital Freight. As the next step for the Backend Engineer role, please complete a 90-minute online coding assessment. Use the link in your candidate portal; it expires in 7 days. Orbital Freight Engineering Hiring",
+  "label": {
+    "is_job_application": true,
+    "company": "Orbital Freight",
+    "status": "assessment"
+  }
+}

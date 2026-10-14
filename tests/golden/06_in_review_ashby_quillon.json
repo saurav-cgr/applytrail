@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-006",
+  "thread_id": "thread-golden-006",
+  "date": "2026-06-09T13:00:00Z",
+  "sender": "Quillon Software <no-reply@ashbyhq.com>",
+  "subject": "Good news about your Quillon application",
+  "body_text": "Hi Sam, Good news - your application for Software Engineer, Payments has moved to the next stage. A recruiter from Quillon Software will reach out in the next few days to share more. Cheers, Quillon Talent",
+  "label": {
+    "is_job_application": true,
+    "company": "Quillon Software",
+    "status": "in_review"
+  }
+}

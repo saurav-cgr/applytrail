@@ -1,11 +1,12 @@
-"""Test doubles for the MCP client and the extractor. They never touch Gmail or a model."""
+"""Test doubles for Gmail, the MCP client and the extractor. They never touch Gmail or a model."""
 
+import base64
 import json
 from datetime import datetime
 from pathlib import Path
 
 from applytrail.errors import AppError, ExtractionInvalid, ProviderUnavailable
-from applytrail.models import EmailMeta, Extraction
+from applytrail.models import EmailMeta, Extraction, MessageRef, SearchPage
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -32,8 +33,8 @@ def email_meta(fixture: dict) -> EmailMeta:
 class FakeMcpClient:
     """Stands in for `mcp_client.GmailMcp`, backed by fixture dicts.
 
-    `search_job_emails` returns the `structured_content` shape from contracts/mcp-tools.md,
-    oldest first, `page_size` messages per page. `get_email` returns an `EmailMeta`.
+    Same signatures as `GmailMcp`: `search_job_emails` returns a `SearchPage`, oldest first,
+    `page_size` messages per page. `get_email` returns an `EmailMeta`.
     Every call is recorded in `calls`. With `fail_on_call=n`, the n-th call (1-based, across
     both methods) raises `error`.
     """
@@ -57,7 +58,7 @@ class FakeMcpClient:
         if self.fail_on_call is not None and len(self.calls) == self.fail_on_call:
             raise self.error or AppError("fake failure")
 
-    def search_job_emails(self, after: datetime, page_token: str | None = None) -> dict:
+    def search_job_emails(self, after: datetime, page_token: str | None = None) -> SearchPage:
         self._record(("search_job_emails", after, page_token))
         matches = sorted(
             (email_meta(f) for f in self.fixtures.values()),
@@ -67,18 +68,14 @@ class FakeMcpClient:
         start = int(page_token or 0)
         page = matches[start : start + self.page_size]
         end = start + len(page)
-        return {
-            "messages": [
-                {
-                    "message_id": e.message_id,
-                    "thread_id": e.thread_id,
-                    "date": e.date.isoformat().replace("+00:00", "Z"),
-                }
+        return SearchPage(
+            messages=[
+                MessageRef(message_id=e.message_id, thread_id=e.thread_id, date=e.date)
                 for e in page
             ],
-            "next_page_token": str(end) if end < len(matches) else None,
-            "query": f"after:{int(after.timestamp())}",
-        }
+            next_page_token=str(end) if end < len(matches) else None,
+            query=f"after:{int(after.timestamp())}",
+        )
 
     def get_email(self, message_id: str) -> EmailMeta:
         self._record(("get_email", message_id))
@@ -128,3 +125,71 @@ class FakeExtractor:
         if email.message_id in self.invalid_ids:
             raise ExtractionInvalid(f"invalid output for {email.message_id}")
         return Extraction.model_validate(self.expected[email.message_id])
+
+
+# --- Gmail API service (for gmail_client and mcp_server tests) ------------------------------
+
+
+def b64(text: str) -> str:
+    return base64.urlsafe_b64encode(text.encode()).decode().rstrip("=")
+
+
+def raw_message(
+    message_id="m1",
+    thread_id="t1",
+    date_header="Mon, 13 Oct 2026 09:15:00 +0000",
+    internal_ms="1791797700000",
+    payload=None,
+    subject="Your application to Acme",
+    from_header="Acme Recruiting <no-reply@greenhouse.io>",
+):
+    headers = [{"name": "From", "value": from_header}, {"name": "Subject", "value": subject}]
+    if date_header is not None:
+        headers.append({"name": "Date", "value": date_header})
+    payload = payload or {"mimeType": "text/plain", "body": {"data": b64("Hi there")}}
+    return {
+        "id": message_id,
+        "threadId": thread_id,
+        "internalDate": internal_ms,
+        "payload": {**payload, "headers": headers},
+    }
+
+
+class FakeGmailRequest:
+    def __init__(self, result=None, error=None):
+        self.result = result
+        self.error = error
+
+    def execute(self, num_retries=0):
+        if self.error is not None:
+            raise self.error
+        return self.result
+
+
+class FakeGmailService:
+    """Mimics `service.users().messages()` with only the read methods `list` and `get`."""
+
+    def __init__(self, pages=None, messages=None, error=None):
+        self.pages = pages or [[]]
+        self.raw = {m["id"]: m for m in (messages or [])}
+        self.error = error
+        self.calls = []
+
+    def users(self):
+        return self
+
+    def messages(self):
+        return self
+
+    def list(self, **kwargs):
+        self.calls.append(("list", kwargs))
+        index = int(kwargs.get("pageToken") or 0)
+        ids = self.pages[index]
+        result = {"messages": [{"id": i, "threadId": self.raw[i]["threadId"]} for i in ids]}
+        if index + 1 < len(self.pages):
+            result["nextPageToken"] = str(index + 1)
+        return FakeGmailRequest(result, self.error)
+
+    def get(self, **kwargs):
+        self.calls.append(("get", kwargs))
+        return FakeGmailRequest(self.raw.get(kwargs["id"]), self.error)

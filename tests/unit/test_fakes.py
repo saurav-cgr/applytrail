@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import pytest
 
 from applytrail.errors import AuthRequired, ExtractionInvalid, ProviderUnavailable
-from applytrail.models import Extraction
+from applytrail.models import Extraction, SearchPage
 from tests.fakes import FakeExtractor, FakeMcpClient, email_meta, load_fixtures
 
 EPOCH = datetime(2026, 1, 1, tzinfo=UTC)
@@ -35,8 +35,9 @@ def test_search_pages_oldest_first():
     ids, token = [], None
     while True:
         page = mcp.search_job_emails(EPOCH, token)
-        ids += [m["message_id"] for m in page["messages"]]
-        token = page["next_page_token"]
+        assert isinstance(page, SearchPage)
+        ids += [m.message_id for m in page.messages]
+        token = page.next_page_token
         if token is None:
             break
     assert len(ids) == 10
@@ -48,7 +49,7 @@ def test_search_pages_oldest_first():
 def test_search_filters_by_after():
     mcp = FakeMcpClient(load_fixtures())
     page = mcp.search_job_emails(datetime(2026, 10, 10, tzinfo=UTC))
-    assert [m["message_id"] for m in page["messages"]] == ["msg-umbrella-001", "msg-acme-004"]
+    assert [m.message_id for m in page.messages] == ["msg-umbrella-001", "msg-acme-004"]
 
 
 def test_mcp_raises_on_nth_call():

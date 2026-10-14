@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-001",
+  "thread_id": "thread-golden-001",
+  "date": "2026-05-04T14:12:00Z",
+  "sender": "Northwind Analytics <no-reply@greenhouse.io>",
+  "subject": "Thank you for applying to Northwind Analytics",
+  "body_text": "Hi Sam, Thank you for applying to the Senior Data Engineer position at Northwind Analytics. Our team will review your application and reach out if your background is a match. Best, Northwind Analytics Talent Team",
+  "label": {
+    "is_job_application": true,
+    "company": "Northwind Analytics",
+    "status": "applied"
+  }
+}

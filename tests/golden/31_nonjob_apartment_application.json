@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-031",
+  "thread_id": "thread-golden-031",
+  "date": "2026-08-01T14:00:00Z",
+  "sender": "Elmwood Residences <leasing@elmwoodresidences.example>",
+  "subject": "Your rental application was received",
+  "body_text": "Hi Sam, Thank you for applying for unit 4B at Elmwood Residences. We have received your rental application and will complete the background check within 3 business days. Elmwood Leasing Office",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

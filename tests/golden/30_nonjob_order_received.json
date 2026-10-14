@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-030",
+  "thread_id": "thread-golden-030",
+  "date": "2026-07-25T20:10:00Z",
+  "sender": "Pagehouse Books <orders@pagehouse.example>",
+  "subject": "We've received your order #48213",
+  "body_text": "Thank you for your order! We've received your order #48213 and will let you know when it ships. Items: Designing Data-Intensive Systems (paperback).",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

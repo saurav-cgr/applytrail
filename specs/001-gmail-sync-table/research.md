@@ -164,7 +164,7 @@ Each entry records a decision, why it was made, and what else was considered.
 ## R9. Terminal rendering
 
 - **Decision**: `rich.table.Table` with columns: badge (4), Company (≤ 28), Role (≤ 30), Status
-  (12), Last activity (10, `YYYY-MM-DD`). Overflow is ellipsized. Company cells use
+  (12), Last seen (10, `YYYY-MM-DD`). Overflow is ellipsized. Company cells use
   `[link=https://mail.google.com/mail/u/0/#all/<thread_id>]` markup; Rich drops links on terminals
   that do not support them. Status is always text; colour only reinforces it.
 - **Rationale**: Fits 100 columns with borders (FR-013); Rich already in the dependency set.

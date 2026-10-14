@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-022",
+  "thread_id": "thread-golden-022",
+  "date": "2026-06-01T06:00:00Z",
+  "sender": "JobBoard <alerts@jobboard.example>",
+  "subject": "Jobs you may be interested in",
+  "body_text": "Based on your profile: Data Engineer at Harbor Freight Analytics, Analytics Engineer at Coral Insurance. Thank you for applying to jobs through JobBoard - keep your profile up to date to get better matches.",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

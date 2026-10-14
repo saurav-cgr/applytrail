@@ -35,6 +35,14 @@ def save(store: Store, path: Path) -> None:
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(path.parent, 0o700)
     load(path)
+    write_private(path, text)
+
+
+def write_private(path: Path, text: str) -> None:
+    """Atomically replace `path` with `text` as a new 0600 file (temp file, fsync, rename).
+
+    Also used for the OAuth token. The parent folder must already exist.
+    """
     tmp = path.with_name(path.name + ".tmp")
     # A leftover temp file (or a symlink planted there) is removed, never followed.
     tmp.unlink(missing_ok=True)
@@ -44,7 +52,6 @@ def save(store: Store, path: Path) -> None:
             f.write(text)
             f.flush()
             os.fsync(f.fileno())
-        os.chmod(tmp, 0o600)
         os.replace(tmp, path)
     except BaseException:
         tmp.unlink(missing_ok=True)

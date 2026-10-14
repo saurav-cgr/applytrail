@@ -203,7 +203,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
 
 ### Gmail access (auth, client, MCP server)
 
-- [ ] T015 [P] [US1] Implement `src/applytrail/gmail_auth.py`:
+- [x] T015 [P] [US1] Implement `src/applytrail/gmail_auth.py`:
   - `SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]` (the only scope, Principle I).
   - `main()` (`applytrail-auth`):
     - If `settings.credentials_path` is missing: print
@@ -218,7 +218,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
     - Raise `AuthRequired` if the token is missing, invalid, lacks the scope, or fails to
       refresh.
     - Never open a browser.
-- [ ] T016 [P] [US1] Write `tests/unit/test_gmail_client.py`. Use a fake Gmail `service` object;
+- [x] T016 [P] [US1] Write `tests/unit/test_gmail_client.py`. Use a fake Gmail `service` object;
   no network.
   - The search query constant contains `-in:chats -in:sent -in:drafts -category:promotions`, the
     job-term OR group, and the ATS sender domains from research R4. `after:` uses epoch seconds.
@@ -230,7 +230,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - The `Date` header is used; if it cannot be parsed, fall back to `internalDate`.
   - HTTP 429 maps to `GmailRateLimited`; connection errors map to `NetworkUnavailable`; other
     `HttpError` maps to `GmailError(status)`.
-- [ ] T017 [US1] Implement `src/applytrail/gmail_client.py` so T016 passes:
+- [x] T017 [US1] Implement `src/applytrail/gmail_client.py` so T016 passes:
   - `SEARCH_QUERY_TEMPLATE` constant (research R4).
   - `build_service(creds)`.
   - `search(service, after: datetime, max_results, page_token)`: `users().messages().list`,
@@ -239,7 +239,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - HTML to text with the stdlib `html.parser.HTMLParser`.
   - Only read methods (`list`, `get`) may be called on the service. No `modify`, `send`, `trash`,
     or `delete` anywhere (FR-002).
-- [ ] T018 [P] [US1] Write `tests/contract/test_mcp_tools.py`. Connect `mcp.Client` in-process to
+- [x] T018 [P] [US1] Write `tests/contract/test_mcp_tools.py`. Connect `mcp.Client` in-process to
   the `MCPServer` instance, with `gmail_client` and `gmail_auth` monkeypatched to fakes.
   - Exactly two tools are listed: `search_job_emails` and `get_email`. Both have docstrings.
   - The input schemas match `contracts/mcp-tools.md`: `after` is required; `max_results` is 1–500,
@@ -250,7 +250,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - Network failure gives the prefix `NETWORK:`; Gmail 429 gives `RATE_LIMITED:`; other errors
     give `GMAIL_ERROR:`.
   - No tool name contains send, modify, label, trash, delete, or draft.
-- [ ] T019 [US1] Implement `src/applytrail/mcp_server.py` so T018 passes:
+- [x] T019 [US1] Implement `src/applytrail/mcp_server.py` so T018 passes:
   - `server = MCPServer("applytrail-gmail")`.
   - `@server.tool() search_job_emails(after: datetime, max_results: int = 500,
     page_token: str | None = None)` and `@server.tool() get_email(message_id: str,
@@ -260,7 +260,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - Map errors to the prefixed tool errors.
   - `logging` goes to stderr only; no `print` (Principle VI).
   - `main()` runs stdio.
-- [ ] T020 [US1] Implement `src/applytrail/mcp_client.py`:
+- [x] T020 [US1] Implement `src/applytrail/mcp_client.py`:
   - Context manager `GmailMcp(settings)` that spawns `applytrail-mcp` (`sys.executable -m
     applytrail.mcp_server`) over stdio with `StdioServerParameters`, passing `APPLYTRAIL_HOME`
     in env.
@@ -272,7 +272,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
 
 ### Extraction (local Ollama) and golden-set gate
 
-- [ ] T021 [P] [US1] Write `tests/unit/test_extractor.py`. Inject a fake transport
+- [x] T021 [P] [US1] Write `tests/unit/test_extractor.py`. Inject a fake transport
   `(method, url, body|None, timeout) -> (status, dict|str)`; no real HTTP. Cases follow
   `contracts/extraction.md`.
   - `check_ready()`:
@@ -294,7 +294,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
     raises `ProviderUnavailable(reason="unresponsive")`.
   - `injection_attempt.json` is sent as data inside the delimiters only. The output still goes
     through validation.
-- [ ] T022 [US1] Implement `src/applytrail/extractor.py` so T021 passes:
+- [x] T022 [US1] Implement `src/applytrail/extractor.py` so T021 passes:
   - `Extractor` Protocol with `check_ready()` and `extract(email: EmailMeta) -> Extraction`.
   - `OllamaExtractor(settings, transport=None, sleep=time.sleep)`. The default transport uses
     `urllib.request` with JSON, a 120 s timeout, and HTTP error bodies read for messages.
@@ -303,20 +303,20 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - `build_user_message(email)`.
   - Validate with `Extraction.model_validate_json(content)`.
   - This module is the only one that knows the Ollama API (Principle IX).
-- [ ] T023 [P] [US1] Create the golden set in `tests/golden/`:
+- [x] T023 [P] [US1] Create the golden set in `tests/golden/`:
   - At least 30 anonymized, labelled emails (SC-003), as JSON in `EmailMeta` shape plus `label:
     {is_job_application, company, status}`.
   - Mix: about 18 job emails across all 7 statuses, including unusual phrasings and ATS senders
     (Greenhouse, Lever, Workday), and about 12 non-job emails (alerts, newsletters, recruiter cold
     outreach, an injection attempt).
   - Use only made-up names.
-- [ ] T024 [US1] Implement `scripts/eval_extractor.py`:
+- [x] T024 [US1] Implement `scripts/eval_extractor.py`:
   - Load `tests/golden/*.json` and run `OllamaExtractor(Settings.from_env())` on each email.
   - Print company accuracy (compare by `norm_company`), status accuracy, the count of non-job
     emails producing a usable extraction (must be 0), skipped count, and mean seconds per email.
   - Exit 1 if accuracy is below 90% or any non-job email leaks.
   - Not run by pytest or CI.
-- [ ] T025 [US1] **GATE, manual**: with Ollama running and `qwen3:4b` pulled, run
+- [x] T025 [US1] **GATE, manual**: with Ollama running and `qwen3:4b` pulled, run
   `uv run python scripts/eval_extractor.py`. Record the results (model, accuracy, leaks, s/email,
   date) in `tests/golden/RESULTS.md`.
   - If it falls short, iterate in order: prompt tweak in `extractor.py`, then
@@ -326,7 +326,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
 
 ### Merge, sync, render, CLI
 
-- [ ] T026 [P] [US1] Write `tests/unit/test_merge.py` (data-model.md "Merge rules", rules 1–3 and
+- [x] T026 [P] [US1] Write `tests/unit/test_merge.py` (data-model.md "Merge rules", rules 1–3 and
   the outcome rules):
   - Acme confirmation, then rejection, gives one application with status `rejected`,
     `last_activity` = rejection date, both `message_ids` in applied order, and `first_seen` =
@@ -344,13 +344,13 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
     - status `unknown` gives `skipped`/`incomplete`;
     - `ExtractionInvalid` gives `skipped`/`invalid_output`.
   - `subject` and `evidence` are truncated to 200 chars.
-- [ ] T027 [US1] Implement `src/applytrail/merge.py` so T026 passes:
+- [x] T027 [US1] Implement `src/applytrail/merge.py` so T026 passes:
   - `classify(extraction | None) -> outcome, reason`.
   - `apply(store, extraction, email) -> application_key` following rules 1–3 exactly.
   - Return enough information (created vs changed fields) for badge tracking in US2. The
     signature `apply(...) -> MergeResult(key, created: bool)` is enough.
   - Pure functions, no I/O.
-- [ ] T028 [P] [US1] Write `tests/integration/test_sync_first_run.py` with `FakeMcpClient`,
+- [x] T028 [P] [US1] Write `tests/integration/test_sync_first_run.py` with `FakeMcpClient`,
   `FakeExtractor`, and a temp `APPLYTRAIL_HOME`:
   - An empty store searches with `after = now − 182 days` (freeze `now`).
   - All pages are collected and processed newest first.
@@ -361,7 +361,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - Newsletter and alert emails are `ignored` and create no application.
   - The injection fixture yields at most one row.
   - An empty mailbox gives zero applications and counts all 0.
-- [ ] T029 [US1] Implement `src/applytrail/sync.py` so T028 passes:
+- [x] T029 [US1] Implement `src/applytrail/sync.py` so T028 passes:
   - `run_sync(store, mcp, extractor, settings, now, on_progress) -> RunCounts`.
   - Window: `checkpoint − OVERLAP`, or `now − FIRST_RUN_LOOKBACK_DAYS` if there is no checkpoint.
   - Collect all search pages, drop IDs already in `store.processed`, and sort by date descending.
@@ -373,9 +373,9 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - Advance `checkpoint` to the max processed date only when the whole list is handled.
   - Set `last_sync_at`, `last_sync_complete`, `stop_reason`, `pending`, and `last_run_counts`.
   - Deterministic; no LLM-driven control flow (Principle III).
-- [ ] T030 [P] [US1] Write `tests/unit/test_render.py`. Use a Rich `Console(record=True,
+- [x] T030 [P] [US1] Write `tests/unit/test_render.py`. Use a Rich `Console(record=True,
   width=100)`.
-  - Columns are badge, Company, Role, Status, Last activity.
+  - Columns are badge, Company, Role, Status, Last seen.
   - Rows are ordered by `last_activity` desc, then company casefold asc, then role (data-model.md
     "Ordering").
   - No line exceeds 100 columns, even with 80-char company and role names (ellipsized).
@@ -385,12 +385,12 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - The company cell has the link `https://mail.google.com/mail/u/0/#all/<thread_id>`.
   - An empty store prints `No job applications found yet.`
   - Summary line: `Read 12 emails · 2 new · 1 updated · 8 ignored · 1 skipped`.
-- [ ] T031 [US1] Implement `src/applytrail/render.py` so T030 passes:
+- [x] T031 [US1] Implement `src/applytrail/render.py` so T030 passes:
   - `render_table(store, console)`: the badge column reads `store.sync.added` / `updated`, and is
     blank when both are empty.
   - `render_summary(counts, console)`.
   - Status is always text; colour only reinforces it.
-- [ ] T032 [P] [US1] Write `tests/unit/test_cli.py`. Patch `GmailMcp`, `OllamaExtractor`, and
+- [x] T032 [P] [US1] Write `tests/unit/test_cli.py`. Patch `GmailMcp`, `OllamaExtractor`, and
   `run_sync` with fakes.
   - The default command runs `check_ready()` **before** opening `GmailMcp` (preflight). On
     `ProviderNotRunning` or `ModelMissing` it exits 2, `GmailMcp` is never constructed, and the
@@ -404,7 +404,7 @@ JSON store holds the applications and the checkpoint (spec US1 scenarios 1–4).
   - `.env` in the cwd is loaded.
   - An unexpected exception prints one line. With `APPLYTRAIL_DEBUG=1` the traceback goes to
     `debug.log` and the path is printed.
-- [ ] T033 [US1] Implement `src/applytrail/cli.py` so T032 passes:
+- [x] T033 [US1] Implement `src/applytrail/cli.py` so T032 passes:
   - `main(argv=None)`: argparse with `--offline`, `--version`, `--help`; `load_dotenv()`.
   - Then: `Settings.from_env()`; `ensure_home`; `store.load`; `extractor.check_ready()`.
   - Then, inside `with GmailMcp(settings) as mcp`: `run_sync(...)`, with a Rich status spinner on

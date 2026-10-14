@@ -77,6 +77,23 @@ class EmailMeta(BaseModel):
     sender: str
     subject: str
     body_text: str
+    truncated: bool = False
+
+
+class MessageRef(BaseModel):
+    """One search hit from the MCP `search_job_emails` tool."""
+
+    message_id: str
+    thread_id: str
+    date: UtcDatetime
+
+
+class SearchPage(BaseModel):
+    """One page of `search_job_emails` results, oldest first (contracts/mcp-tools.md)."""
+
+    messages: list[MessageRef]
+    next_page_token: str | None = None
+    query: str
 
 
 class Application(BaseModel):

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-016",
+  "thread_id": "thread-golden-016",
+  "date": "2026-07-20T09:00:00Z",
+  "sender": "Halcyon Health Careers <halcyonhealth@myworkday.com>",
+  "subject": "Update regarding your application",
+  "body_text": "Dear Sam Rivera, Thank you for your interest in the Platform Engineer role at Halcyon Health. After careful consideration, we have decided not to move forward with your application. We wish you the best in your search. Halcyon Health Talent Acquisition",
+  "label": {
+    "is_job_application": true,
+    "company": "Halcyon Health",
+    "status": "rejected"
+  }
+}

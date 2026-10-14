@@ -9,8 +9,10 @@ from applytrail.models import (
     Application,
     EmailMeta,
     Extraction,
+    MessageRef,
     ProcessedEmail,
     RunCounts,
+    SearchPage,
     Status,
     Store,
     SyncState,
@@ -304,3 +306,29 @@ def test_store_round_trip_json():
     )
     again = Store.model_validate(store.model_dump(mode="json"))
     assert again == store
+
+
+def test_email_meta_truncated_defaults_false():
+    email = EmailMeta(
+        message_id="m1", thread_id="t1", date=NOW, sender="a@b.example", subject="s", body_text="b"
+    )
+    assert email.truncated is False
+
+
+def test_search_page_shape():
+    page = SearchPage.model_validate(
+        {
+            "messages": [{"message_id": "m1", "thread_id": "t1", "date": "2026-10-13T09:15:00Z"}],
+            "next_page_token": None,
+            "query": "after:1 x",
+        }
+    )
+    assert page.messages[0] == MessageRef(
+        message_id="m1", thread_id="t1", date=datetime(2026, 10, 13, 9, 15, tzinfo=UTC)
+    )
+    assert page.next_page_token is None
+
+
+def test_message_ref_rejects_naive_date():
+    with pytest.raises(ValidationError):
+        MessageRef(message_id="m1", thread_id="t1", date=datetime(2026, 10, 13, 9, 15))

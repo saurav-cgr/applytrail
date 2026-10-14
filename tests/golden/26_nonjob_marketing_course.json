@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-026",
+  "thread_id": "thread-golden-026",
+  "date": "2026-07-05T10:00:00Z",
+  "sender": "InterviewAce <hello@interviewace.example>",
+  "subject": "Ace your next interview - 30% off this week",
+  "body_text": "Got an interview coming up? Our system design course has helped 20,000 engineers land offers. Use code ACE30 for 30% off until Sunday. Unsubscribe at any time.",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-033",
+  "thread_id": "thread-golden-033",
+  "date": "2026-08-10T10:30:00Z",
+  "sender": "Granite Cloud Careers <careers@granitecloud.example>",
+  "subject": "Welcome to the Granite Cloud talent community",
+  "body_text": "Hi Sam, thanks for joining our talent community. We'll send you news about Granite Cloud and let you know when roles that match your interests open up. You haven't applied to a specific role yet.",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

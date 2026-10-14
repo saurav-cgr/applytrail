@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-010",
+  "thread_id": "thread-golden-010",
+  "date": "2026-06-24T12:00:00Z",
+  "sender": "Verdant Energy <noreply@smartrecruiters.com>",
+  "subject": "Verdant Energy: please complete your assessment",
+  "body_text": "Dear Sam, Thank you for your interest in the Data Scientist position at Verdant Energy. You are invited to complete an online assessment covering statistics and Python. Please complete it by July 1. Kind regards, Verdant Energy Recruitment",
+  "label": {
+    "is_job_application": true,
+    "company": "Verdant Energy",
+    "status": "assessment"
+  }
+}

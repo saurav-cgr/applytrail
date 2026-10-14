@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-017",
+  "thread_id": "thread-golden-017",
+  "date": "2026-07-23T13:45:00Z",
+  "sender": "Tidewater Logistics <jobs@tidewater-logistics.example>",
+  "subject": "Backend Developer position",
+  "body_text": "Hi Sam, Thank you for the time you put into the process. The Backend Developer position has now been filled by another candidate whose experience more closely matched our needs. We'll keep your details on file. Tidewater Logistics Recruiting",
+  "label": {
+    "is_job_application": true,
+    "company": "Tidewater Logistics",
+    "status": "rejected"
+  }
+}

@@ -6,6 +6,7 @@ __pycache__/
 .env
 credentials.json
 token.json
+token.json.tmp
 .applytrail/
 
 # Local agent tooling
