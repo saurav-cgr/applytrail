@@ -117,3 +117,20 @@ now ready for the checker.
   - An unexpected exception inside a tool becomes the SDK's generic `Error executing tool <name>` result and is logged to stderr with a traceback. T020 must map unknown error text to `GmailError`.
   - `RATE_LIMITED:` text does not carry the pending count; the CLI knows it, the server does not.
 - Handoff: continue maker (D3 incomplete).
+
+## Iteration 7 — 2026-10-14
+- Targeted criteria: D3 (partial: T020, plus tests the task list does not demand)
+- Worktree: `../applytrail-loop-iter-7` on `us1-wip` (M-009); removed after commit.
+- Change (commit on `us1-wip`: `wip(us1): MCP client spawning the server over stdio (T020)`):
+  - Tests first, confirmed failing: `tests/unit/test_fakes.py` changed to expect `SearchPage` from `FakeMcpClient` (2 failures), and new `tests/unit/test_mcp_client.py` (`ModuleNotFoundError`). Covers: identical method signatures for `GmailMcp` and `FakeMcpClient`; typed pages and emails through an in-process server with the fake Gmail service; `after` sent as ISO datetime; `AUTH_REQUIRED`/`NETWORK`/`RATE_LIMITED`/`GMAIL_ERROR` mapped back to `AuthRequired`/`NetworkUnavailable`/`GmailRateLimited`/`GmailError(503)`; a server-side crash mapped to `GmailError`; spawn parameters (`sys.executable -m applytrail.mcp_server`, `APPLYTRAIL_HOME`, inherited `PATH`); the real stdio subprocess with no token raising `AuthRequired`; calls outside the context manager raising `RuntimeError`.
+  - `tests/fakes.py`: `FakeMcpClient.search_job_emails` returns `SearchPage` (M-007 updated).
+  - `src/applytrail/mcp_client.py`: `GmailMcp(settings, server=None)` context manager. It runs `mcp.Client` inside an anyio blocking portal so the synchronous CLI can call it; `server_parameters()`; `_error_from_text` maps prefixes back to typed errors.
+  - `tasks.md`: T020 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 219 passed (two tests spawn a real server subprocess; suite now about 4 s).
+- Maker self-assessment (maker's own view, NOT a verdict): T020 done. D3 not ready (T021–T024, T026–T027 remain; T028+ blocked on D4).
+- Open questions / risks:
+  - The spawned server receives the whole parent environment (PATH, proxies and certificate settings are needed to reach Gmail), not only `APPLYTRAIL_HOME`. The server is our own code.
+  - `GmailRateLimited()` from the client carries `pending=0`; `sync.py` (T029) must re-raise it with the real pending count.
+  - No read timeout is set on MCP calls; a hung Gmail request waits on googleapiclient's own socket timeout.
+  - `anyio` is imported directly; it is a dependency of `mcp`, not declared in `pyproject.toml` (same situation as `httplib2`).
+- Handoff: continue maker (D3 incomplete).
