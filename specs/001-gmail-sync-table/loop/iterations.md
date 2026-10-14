@@ -229,7 +229,7 @@ now ready for the checker.
 - Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 400 passed. Rendered sample: every line exactly 100 columns with 80-char names.
 - Maker self-assessment (maker's own view, NOT a verdict): T030–T031 done. D3 not ready (T032–T033 remain).
 - Open questions / risks:
-  - Contract widths (4+28+30+12+10, plus padding and borders) total exactly 100, so the 13-char `Last activity` header cannot fit in 10 columns. Rich ellipsized it to `Last acti…`; the maker lets that column wrap, giving a two-line header (`Last` / `activity`). Alternative: shorten the header (e.g. `Last seen`), which changes the contract text.
+  - Contract widths (4+28+30+12+10, plus padding and borders) total exactly 100, so the 13-char `Last activity` header could not fit in 10 columns. Human ruling after this iteration: shorten it. Header is now `Last seen` in render.py, tests, contracts/cli.md, research.md R9 and tasks.md T030 (commit on `us1-wip`: `wip(us1): shorten date column header to Last seen`).
   - Status colours (`cyan`, `red`, ...) are the maker's choice; no spec lists them.
   - `render_summary` always says `emails` (also for 1). The contract gives only the plural example.
   - The link test relies on `Console.export_html` emitting `<a href>` for `link` styles (Rich 15.0.0).
