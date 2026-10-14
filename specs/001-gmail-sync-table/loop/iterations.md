@@ -99,3 +99,21 @@ now ready for the checker.
   - The scope check uses `Credentials.has_scopes`, so a token that also carries extra scopes still loads. Only `main()` requests scopes, and it asks for readonly only.
   - `main()` itself is not run against a real Google client in tests; D9 (quickstart) covers that.
 - Handoff: continue maker (D3 incomplete).
+
+## Iteration 6 — 2026-10-14
+- Targeted criteria: D3 (partial: T018–T019 test+implementation pair)
+- Worktree: `../applytrail-loop-iter-6` on `us1-wip` (M-009); removed after commit.
+- Change (commit `cc4ba83 wip(us1): read-only Gmail MCP server and contract tests (T018-T019)` on `us1-wip`):
+  - Refactor first, suite green before and after: the fake Gmail service, `raw_message` and `b64` moved from `tests/unit/test_gmail_client.py` to `tests/fakes.py` (`FakeGmailService`, `FakeGmailRequest`) so contract tests share them.
+  - Tests first, confirmed failing at collection (`ImportError` for `mcp_server`): `tests/contract/test_mcp_tools.py` through in-process `mcp.Client(mcp_server.server)`, with `gmail_auth.load_credentials` and `gmail_client.build_service` monkeypatched. Covers: exactly two tools with contract descriptions; no write-sounding names; input schemas (`after` required, date-time; `max_results` 1–500 default 500; `max_chars` 500–20000 default 4000); out-of-range arguments rejected; structured content for both tools (two pages, HTML fixture, truncation); credentials loaded per call; `AUTH_REQUIRED:` exact text; `NETWORK:`, `RATE_LIMITED:`, `GMAIL_ERROR:` prefixes for both tools; `GMAIL_ERROR: HTTP 503`; nothing on stdout; output schemas advertised. One test spawns the real `python -m applytrail.mcp_server` over stdio with an empty `APPLYTRAIL_HOME` and expects `AUTH_REQUIRED` (no Gmail call is possible without a token).
+  - `src/applytrail/mcp_server.py`: `server = MCPServer("applytrail-gmail")`, tools `search_job_emails` and `get_email`, credentials loaded on every call, `main()` logs to stderr and runs stdio.
+  - `tests/contract/__init__.py`, `tests/integration/__init__.py` replace `.gitkeep` (needed to import `tests.fakes`).
+  - `tasks.md`: T018, T019 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 206 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T018–T019 done. D3 not ready (T020–T024, T026–T027 remain; T028+ blocked on D4).
+- Open questions / risks:
+  - Deviation from T019's text ("typed Pydantic return models"; "map errors to the prefixed tool errors"): mcp 2.3.0 prefixes every raised `ToolError` with `Error executing tool <name>: `, which breaks the contract's exact `AUTH_REQUIRED: ...` text. Tools are therefore annotated `Annotated[CallToolResult, SearchPage]` / `Annotated[CallToolResult, EmailMeta]` and return `CallToolResult` themselves: `is_error=True` with the exact prefixed text, or `structured_content` from the Pydantic model. The output schema is still the model's (tested).
+  - Argument validation errors (e.g. `max_results: 0`) still come back with the SDK's `Error executing tool ...` text. They are programming errors in the client, not contract error cases.
+  - An unexpected exception inside a tool becomes the SDK's generic `Error executing tool <name>` result and is logged to stderr with a traceback. T020 must map unknown error text to `GmailError`.
+  - `RATE_LIMITED:` text does not carry the pending count; the CLI knows it, the server does not.
+- Handoff: continue maker (D3 incomplete).
