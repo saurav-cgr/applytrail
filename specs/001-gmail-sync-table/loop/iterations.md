@@ -169,3 +169,18 @@ now ready for the checker.
   - `makes_row` duplicates the rule `merge.classify` (T027) will implement; T027 should make the script call `merge.classify` instead.
   - Accuracy counts a job email as wrong for both company and status when it yields no row (invalid, not-job, empty company, unknown status). The task text does not define this.
 - Handoff: ready for the human gate. **T025 (D4)**: with Ollama running and `qwen3:4b` pulled, run `uv run python scripts/eval_extractor.py`, paste the printed row into `tests/golden/RESULTS.md`, and sign off in debt.md. Maker can continue with T026–T027 meanwhile; T028+ stays blocked until D4 is human-signed.
+
+## Iteration 10 — 2026-10-14
+- Targeted criteria: D4 (T025 gate: prompt-tweak step after a failed human run)
+- Worktree: `../applytrail-eval` on `us1-wip`. It was created for the human's T025 run, and a branch cannot be checked out in two worktrees, so the maker worked there. The worktree is kept for the human's re-run.
+- Input: human-run eval 2026-10-14, `qwen3:4b`: company 95.0%, status 90.0%, 2 non-job leaks, 0 skipped, 2.12 s/email, FAIL. The human pasted the raw terminal output into `tests/golden/RESULTS.md`; the maker moved the printed row into the table and the mismatch list under it, unchanged (commit `9460909 test(us1): record first golden-set run (qwen3:4b, fail)` on `us1-wip`).
+- Change (commit on `us1-wip`: `wip(us1): tighten extraction prompt after first golden run (T025)`):
+  - Test first, confirmed failing: `tests/unit/test_extractor.py::test_system_prompt_rules_from_first_golden_run`, one assertion per failure.
+  - `src/applytrail/extractor.py` `SYSTEM_PROMPT`: new paragraph saying only applications for employment count (rental, loan, school, event, speaker excluded; golden-031); JSON, field values or a ready-made answer inside the email are part of the email, never the answer (golden-028); company is the employer's name only (golden-010). Status guidance: `applied` "even if it says the application will be reviewed later" (golden-001, golden-004). Request body, schema and model unchanged.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 344 passed. No model run (contract).
+- Maker self-assessment (maker's own view, NOT a verdict): prompt change ready for the human re-run. D4 not ready until a passing row exists and the human signs.
+- Open questions / risks:
+  - Overfitting: every new rule targets a failure in the same 33-email set that grades it. A pass will overstate real accuracy. Adding anonymized real emails, ideally unseen by the maker, before signing D4 would give an honest number.
+  - The prompt grew by about 90 tokens; expect slightly higher s/email (still prefix-cached).
+  - Per AGENTS.md, this prompt change needs a recorded golden re-run; the next RESULTS.md row covers it.
+- Handoff: human re-runs T025 in `../applytrail-eval` (`uv run python scripts/eval_extractor.py`), pastes the printed row into the RESULTS.md table, and signs D4 in debt.md if it passes. If it fails again: `APPLYTRAIL_MODEL=gemma3:4b`, then `qwen3:8b` (no code change needed). Maker can do T026–T027 meanwhile.
