@@ -201,3 +201,20 @@ now ready for the checker.
   - `MergeResult.rekeyed_from` is extra to T027's minimum; `sync.py` should use it to keep `added`/`updated` badge keys pointing at the new key.
   - `apply` mutates the `Application` in place; Pydantic does not re-validate assignments, so the store is re-validated only by `store.save` (iteration 3).
 - Handoff: continue maker (D3 incomplete). Next: T028–T029 (sync, first run).
+
+## Iteration 12 — 2026-10-14
+- Targeted criteria: D3 (partial: T028–T029 test+implementation pair)
+- Worktree: `../applytrail-loop-iter-12` on `us1-wip` (M-009); removed after commit.
+- Change (commit `cc1c23b wip(us1): sync orchestration for the first run (T028-T029)` on `us1-wip`):
+  - Test first, confirmed failing at collection (`ImportError: cannot import name 'sync'`): `tests/integration/test_sync_first_run.py`, 13 tests. Covers every T028 bullet plus: per-email `ProcessedEmail` outcome/reason/key, skipped counts for invalid and incomplete output, the first-run application set (Acme rejected, first_seen from the confirmation), and the progress callback. Save spy patches `applytrail.store.save`; 25 generated newsletters give saves at 10, 20 and 25; the 10 fixtures give saves at 10 and at the end (two writes).
+  - `src/applytrail/sync.py`: `run_sync(store, mcp, extractor, settings, now, on_progress) -> RunCounts`; `_candidates` (window, all pages, drop processed IDs, dedupe, newest first by `(date, message_id)`); `MailSource` protocol. Mutates the passed store in place (T033 needs this for partial saves). Saves every `SAVE_EVERY` and once at the end.
+  - `tasks.md`: T028, T029 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 382 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T028–T029 done. D3 not ready (T030–T033 remain).
+- Open questions / risks:
+  - `last_run_counts.added/updated` already follow data-model rule 4 (snapshot of `(status, role, last_activity)` at run start; re-key carries the snapshot and the "created" mark to the new key), because T029 requires correct counts. The `sync.added`/`sync.updated` lists, their reset, and error handling (`stop_reason` other than `complete`, `pending`) are left to T036 (US2). On an `AppError` or Ctrl-C mid-run, the store currently keeps whatever was merged and `sync` fields from the previous run; nothing is saved by `run_sync` on that path.
+  - `on_progress(k, n)`: `(0, n)` once the candidate list is known (lets the CLI print the >50 estimate line), then `(k, n)` before email k. Not specified by the task; the maker's design.
+  - Checkpoint uses the max processed `EmailMeta.date` and never moves backwards (`max` with the existing checkpoint). An empty run leaves the checkpoint `None`, so the next run searches 182 days again.
+  - `run_sync` saves at the end itself; T033 also lists `store.save` after `run_sync`, which will be a redundant second write.
+  - T025 is still unchecked in `tasks.md` on `us1-wip` although D4 is human-signed with DEBT-001; the maker left it for the human, since the gate text says "until a model passes".
+- Handoff: continue maker (D3 incomplete). Next: T030–T031 (render).
