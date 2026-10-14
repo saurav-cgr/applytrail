@@ -15,6 +15,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V008 | 19 | D6 | Clean detached worktree at 7ebc719: required 66 tests and full 449 tests pass, Ruff passes; single US2 commit and task audit pass; independent search-failure probes retain stale badges and count prior additions in latest run, violating T036/data-model | fail | high | 2026-10-14 |
 | V009 | 20 | D6 | Clean detached worktree at fae030f: required 68 tests and full 451 tests pass, Ruff passes; single US2 commit/task audit; nine independent search, pagination and progress stop probes plus save/load/render and unchanged repeat pass | pass | high | 2026-10-14 |
 | V010 | 22 | D7 | Clean detached worktree at fa757fd: required 35 tests and full 460 tests pass, Ruff passes; single US3 commit/task audit; independent fresh-process offline probes forbid sockets, subprocesses, writes and network imports; 500 rows render in 0.27–0.30 s | pass | high | 2026-10-14 |
+| V011 | 23 | D8 | Clean detached worktree at 8fc7e1e: uv sync, Ruff lint/format and full pytest (460) pass; provider/write-call searches and AST audit empty; README/task/constitution audit; temporary uv tool install and installed-command probes pass | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -437,3 +438,54 @@ sign-off.
 
 Live Gmail/Ollama and minimum-Python execution were not checked. Accepted
 extraction injection risk and the planned constitution/provider amendment remain.
+
+
+## Iteration 23 independent check — 2026-10-14
+
+The checker did not produce iteration 23, the README or the constitution amendment.
+D8 is the only maker-ready criterion; one independent vote is required. Checks
+ran in a clean detached worktree at `8fc7e1e`, including polish commit `16af966`,
+the recorded human whole-word grep ruling and committed constitution 1.1.0.
+This verifies the current tree rather than the earlier uncommitted draft state.
+
+### D8: pass (high confidence)
+
+- Independent `uv sync` passed. Ruff lint and format passed (43 files).
+  Full pytest: 460 passed in 7.30 seconds on Python 3.14.7.
+- Forbidden-provider source search was empty. Whole-word Gmail-write search
+  was empty, including delete, insert, untrash and batchModify in addition to
+  the contract's modify/send/trash/batchDelete. Independent AST inspection found
+  no calls to those write methods. Source review confirms Gmail list/get only,
+  gmail.readonly only, and exactly the two documented read tools. The required
+  sender field is not a write operation; the recorded human ruling resolves the
+  earlier substring false positive. T043's historical substring wording remains
+  superseded by that ruling in D8.
+- T041–T043 are checked. README covers installation, OAuth Desktop client and
+  read-only consent, local Ollama setup, flags, all four environment variables,
+  exit codes, privacy and persisted fields, file modes, and standalone MCP
+  setup. Defaults, keep_alive=5m, lazy offline path and warning behavior match
+  the source and CLI contract. No prompt, model or extraction schema changed.
+- Constitution 1.1.0 contains the Sync Impact Report and all T042 changes:
+  Python 3.11+, MCPServer/mcp 2.x, stdlib urllib/local Ollama, qwen3:4b,
+  reference-laptop performance target and local/remote-host privacy wording.
+  The earlier constitution/provider mismatch is resolved in the current tree.
+- Independent package metadata checks confirm Python >=3.11, Markdown content
+  type and the complete README as the installed package description.
+  Executed the README's `uv tool install .` with temporary tool/bin directories;
+  it succeeded and installed all three named entry points. Installed version,
+  help and no-data offline commands returned their expected text and exit 0;
+  offline created no home folder. Installed auth with missing credentials
+  returned exit 2 and the README setup hint without a traceback. These probes
+  used disposable state and made no live Gmail/Ollama calls.
+
+No failures, uncertain criteria or new debt. D8 is checker-pass; phase is checked.
+The checker changed only loop.md and verdicts.md, not implementation or
+iterations.md. Earlier verdicts and human-accepted DEBT-001 remain in force.
+D9/T044 remains pending: a human must run quickstart mailbox scenarios 1–6 and
+3b, record timings in tests/golden/RESULTS.md, and sign off. Use
+`/speckit-loop-status` to resume that manual gate. The loop remains open and
+still requires `/speckit-loop-guard` plus human closure sign-off afterward.
+
+Live OAuth, Gmail, Ollama, MCP Inspector/Claude Desktop, pipx installation and
+minimum-Python execution were not checked. D9 real-mail accuracy/performance
+is unverified; the accepted extraction injection risk remains.
