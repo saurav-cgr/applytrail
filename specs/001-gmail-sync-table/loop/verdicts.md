@@ -16,6 +16,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V009 | 20 | D6 | Clean detached worktree at fae030f: required 68 tests and full 451 tests pass, Ruff passes; single US2 commit/task audit; nine independent search, pagination and progress stop probes plus save/load/render and unchanged repeat pass | pass | high | 2026-10-14 |
 | V010 | 22 | D7 | Clean detached worktree at fa757fd: required 35 tests and full 460 tests pass, Ruff passes; single US3 commit/task audit; independent fresh-process offline probes forbid sockets, subprocesses, writes and network imports; 500 rows render in 0.27–0.30 s | pass | high | 2026-10-14 |
 | V011 | 23 | D8 | Clean detached worktree at 8fc7e1e: uv sync, Ruff lint/format and full pytest (460) pass; provider/write-call searches and AST audit empty; README/task/constitution audit; temporary uv tool install and installed-command probes pass | pass | high | 2026-10-14 |
+| V012 | 23 (post-iteration human gate) | D9 | Clean feature tree dc6049b: RESULTS.md six scenario records, debt.md human sign-off and accepted 3b waiver audited against revised contract; no implementation drift; 460 tests and Ruff pass; live run not independently repeated | pass | medium | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -489,3 +490,45 @@ still requires `/speckit-loop-guard` plus human closure sign-off afterward.
 Live OAuth, Gmail, Ollama, MCP Inspector/Claude Desktop, pipx installation and
 minimum-Python execution were not checked. D9 real-mail accuracy/performance
 is unverified; the accepted extraction injection risk remains.
+
+
+## Post-iteration 23 manual gate independent check — 2026-10-14
+
+This checker did not conduct or record the human mailbox run. D9 is the only
+maker-ready criterion. The latest numbered maker iteration remains 23; commit
+`dc6049b` adds the subsequent human validation report. One independent vote is
+required. Checks ran against the clean feature tree at that commit.
+
+### D9: pass (medium confidence)
+
+- The current D9 criterion requires RESULTS.md records for Scenarios 1–6 and
+  human sign-off. Scenario 3b timing/memory was explicitly excluded by the
+  recorded human ruling in `d8cb227`; DEBT-002 retains that accepted gap.
+- Inspected quickstart.md against the results table: setup and Scenarios 1–6
+  are individually recorded as pass, on a real mailbox with qwen3:4b dated
+  2026-10-14. Scenario 3b is explicitly marked not run, with no fabricated
+  timing. debt.md names saurav-cgr's D9 sign-off and repeats the exclusion.
+  T044 is checked. An independent document assertion verified all six rows,
+  the waiver, accepted debt, sign-off and updated contract are consistent.
+- Adversarial audit looked for missing scenarios, a claimed unmeasured timing,
+  an absent sign-off, conflicting scope and implementation drift. None was
+  found under the revised D9 contract. T044/quickstart retain the original 3b
+  instructions; the explicit human ruling supersedes that part of the gate.
+- Git comparison with previously checked `cbb3ce7` shows no source or executable
+  test changes; only gate records and results changed. Full pytest still passes:
+  460 tests in 4.52 seconds on Python 3.14.7. Ruff lint and format pass (43 files).
+- This is verification of the required durable human report and sign-off,
+  not independent reproduction of live runtime behavior. The maker's counts,
+  permissions and no-body spot check were not used as independent evidence.
+  Confidence is medium because the checker did not observe the human live run.
+
+No failures, uncertain criteria or new debt under the revised contract. D9 is
+checker-pass; phase remains checked. The checker edited only loop.md and
+verdicts.md, not implementation, iterations.md, RESULTS.md or debt.md.
+All automatable criteria now have checker passes; D4 remains human-signed with
+accepted DEBT-001. Recommend `/speckit-loop-guard` for the required comprehension
+checkpoint and explicit closure sign-off. The loop is not declared done.
+
+Live Gmail/Ollama scenarios were not independently repeated. SC-001 speed and
+memory remain unmeasured (accepted DEBT-002); the accepted prompt-injection
+extraction leak remains (DEBT-001).
