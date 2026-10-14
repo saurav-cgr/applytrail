@@ -184,3 +184,20 @@ now ready for the checker.
   - The prompt grew by about 90 tokens; expect slightly higher s/email (still prefix-cached).
   - Per AGENTS.md, this prompt change needs a recorded golden re-run; the next RESULTS.md row covers it.
 - Handoff: human re-runs T025 in `../applytrail-eval` (`uv run python scripts/eval_extractor.py`), pastes the printed row into the RESULTS.md table, and signs D4 in debt.md if it passes. If it fails again: `APPLYTRAIL_MODEL=gemma3:4b`, then `qwen3:8b` (no code change needed). Maker can do T026–T027 meanwhile.
+
+## Iteration 11 — 2026-10-14
+- Targeted criteria: D3 (partial: T026–T027 test+implementation pair)
+- Worktree: `../applytrail-loop-iter-11` on `us1-wip` (M-009); the human's `../applytrail-eval` worktree (clean, all results committed) was removed first. Removed after commit.
+- Context since iteration 10 (human-run T025, recorded on `us1-wip`): `qwen3:4b` v2 100.0/90.0/1 leak, `gemma3:4b` 90.0/85.0/3, `qwen3:8b` 100.0/95.0/2; all FAIL (commits `77412ae`, `79438d2`, `fbe2fca`). Human chose to keep `qwen3:4b` + prompt v2 and signed D4 with DEBT-001 (`b096ea6`, `d9f033c`).
+- Change (commit `7a2a1d0 wip(us1): deterministic merge rules and outcome classification (T026-T027)` on `us1-wip`):
+  - Tests first, confirmed failing at collection (`ImportError: merge`): `tests/unit/test_merge.py`. Covers every T026 bullet plus: same date counts as newer; re-applying a message does not duplicate its ID; re-key also from an older email (role filled, status kept) and updates `processed[*].application_key`; role given when the company has `ck|` and another role creates a new key; role missing never erases a known role; role missing with three apps targets `ck|`; older email cannot change display company; `apply` refuses an unusable extraction.
+  - `src/applytrail/merge.py`: `classify(extraction | exception | None) -> (outcome, reason)`, `apply(store, extraction, email) -> MergeResult(key, created, rekeyed_from)`, `_rekey`. Pure; no I/O.
+  - `scripts/eval_extractor.py`: `makes_row` now calls `merge.classify` (removes the duplicate rule flagged in iteration 9). Scoring unchanged; its tests pass.
+  - `tasks.md`: T026, T027 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 369 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T026–T027 done. D3 not ready (T028–T033 remain; now unblocked by D4).
+- Open questions / risks:
+  - Interpretations beyond data-model.md: (a) on re-key the role is filled in even when the email is older than `last_activity` ("fill in the role" reads as unconditional); (b) a duplicate `message_id` is not appended twice; (c) `classify` treats a whitespace-only company as incomplete.
+  - `MergeResult.rekeyed_from` is extra to T027's minimum; `sync.py` should use it to keep `added`/`updated` badge keys pointing at the new key.
+  - `apply` mutates the `Application` in place; Pydantic does not re-validate assignments, so the store is re-validated only by `store.save` (iteration 3).
+- Handoff: continue maker (D3 incomplete). Next: T028–T029 (sync, first run).
