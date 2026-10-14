@@ -13,3 +13,4 @@ acknowledged, not deleted. The loop may not declare "done" while blocking debt i
 | Date | Criterion / scope | Signed off by | Note |
 |------|-------------------|---------------|------|
 | 2026-10-14 | D4 (T025 extractor gate) | saurav-cgr (decision given in chat; recorded by the maker) | Accepted `qwen3:4b` + prompt v2 despite FAIL (1 leak, status exactly 90%). See DEBT-001 and tests/golden/RESULTS.md. Unblocks T028+. |
+| 2026-10-14 | D9 (T044 quickstart, Scenarios 1–6 without 3b) | saurav-cgr (reported in chat; recorded by the maker) | All scenarios behaved as expected on a real mailbox. No timings reported. Scenario 3b skipped; see DEBT-002. |

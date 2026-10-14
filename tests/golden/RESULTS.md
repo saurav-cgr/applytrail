@@ -58,3 +58,24 @@ golden-028 (a ready-made JSON answer inside the email) leaked with every model a
 No model passed. The human accepted `qwen3:4b` with prompt v2 (100.0% / 90.0% / 1 leak) as the
 default and signed off D4 with the leak recorded as accepted debt (loop `debt.md`, DEBT-001).
 `config.py` keeps `qwen3:4b`.
+
+## Quickstart validation (T044, D9)
+
+Human-run on a real mailbox, 2026-10-14, model `qwen3:4b`. Scenario 3b (speed and memory, SC-001)
+was not run by human decision; see DEBT-002 in `specs/001-gmail-sync-table/loop/debt.md`.
+
+| Scenario | Result |
+|---|---|
+| Setup: Google OAuth Desktop client, `applytrail-auth` | pass |
+| 1 First run, Ctrl-C and resume | pass |
+| 2 Idempotent re-run (SC-004) | pass |
+| 3 Badges (`NEW`, then `UPD` to Interview) | pass |
+| 3b Speed and memory (SC-001) | not run (human decision) |
+| 4 Offline view | pass |
+| 5 Expected failures (exit codes 2, 3, 4, 5, 130) | pass |
+| 6 MCP server stand-alone (two read tools) | pass |
+
+The human reported every scenario above as behaving as expected; no timings were reported.
+Maker spot check of `~/.applytrail` afterwards (counts and file modes only, no email content read):
+`applications.json`, `token.json` and `credentials.json` are mode `0600`; the store holds 106
+applications from 754 processed emails; the last sync is complete; `grep -c body_text` prints `0`.

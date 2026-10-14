@@ -536,7 +536,7 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
 - [x] T043 Run `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Fix all
   failures. Confirm with `grep -rn "google.genai\|import ollama" src/` (empty) and
   `grep -rn "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` (empty).
-- [ ] T044 Run quickstart validation on a real mailbox, following
+- [x] T044 Run quickstart validation on a real mailbox, following
   `specs/001-gmail-sync-table/quickstart.md`:
   - Scenarios 1–6, including Scenario 3b: time a ~20-email sync and check `ollama ps` memory.
   - If 3b exceeds 60 s, set `BODY_MAX_CHARS = 3000` in `src/applytrail/config.py` and re-measure.
