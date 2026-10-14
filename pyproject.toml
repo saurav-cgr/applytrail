@@ -2,6 +2,7 @@
 name = "applytrail"
 version = "0.1.0"
 description = "Track job applications from Gmail in a terminal table, using a local Ollama model."
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "mcp>=2.3,<3",

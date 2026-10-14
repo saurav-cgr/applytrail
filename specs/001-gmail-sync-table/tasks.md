@@ -502,7 +502,7 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
 
 **Purpose**: Documentation, governance follow-ups, and end-to-end validation
 
-- [ ] T041 [P] Write `README.md`:
+- [x] T041 [P] Write `README.md`:
   - What it does.
   - Install: `uv tool install .` or `pipx install .`.
   - **Set up Google OAuth**: a Cloud project, enable the Gmail API, an OAuth client of type
@@ -521,7 +521,7 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
     - which files are in `~/.applytrail`.
   - Using the MCP server stand-alone (MCP Inspector, Claude Desktop config snippet).
   - Satisfies SC-007 and constitution Principle V.
-- [ ] T042 [P] Draft the constitution amendment in `.specify/memory/constitution.md` (MINOR,
+- [x] T042 [P] Draft the constitution amendment in `.specify/memory/constitution.md` (MINOR,
   1.0.0 to 1.1.0):
   - Technical Constraints:
     - Python ≥ 3.11;
@@ -533,7 +533,7 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
   - Principle V: the README states extraction is local, plus the `OLLAMA_HOST` caveat.
   - Update the Sync Impact Report.
   - **Leave it uncommitted for user review.**
-- [ ] T043 Run `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Fix all
+- [x] T043 Run `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Fix all
   failures. Confirm with `grep -rn "google.genai\|import ollama" src/` (empty) and
   `grep -rn "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` (empty).
 - [ ] T044 Run quickstart validation on a real mailbox, following
