@@ -1,3 +1,22 @@
+<!--
+Sync Impact Report
+- Version change: 1.0.0 -> 1.1.0 (MINOR: provider guidance and technical constraints materially
+  changed to match the 001-gmail-sync-table plan; no principle removed, no permission boundary
+  changed)
+- Modified principles:
+  - V. Privacy and Secret Hygiene: the README must state that extraction runs on the local
+    Ollama model and that email text leaves the machine only if OLLAMA_HOST points elsewhere
+    (replaces the hosted-provider data-use wording).
+  - VII. Terminal-First User Experience: "missing API key" example replaced by "Ollama not
+    running" (no API key exists with a local model).
+- Technical Constraints: Python >= 3.11; mcp 2.x MCPServer replaces FastMCP; google-genai
+  replaced by local Ollama over HTTP (stdlib urllib); default model qwen3:4b; performance target
+  restated for the reference laptop.
+- Added sections: none. Removed sections: none.
+- Templates: .specify/templates/* reviewed; no change needed (they reference the constitution
+  generically).
+- Follow-up TODOs: none. README.md already states local extraction and the OLLAMA_HOST caveat.
+-->
 # ApplyTrail Constitution
 
 A terminal application that reads job-application emails from Gmail through a project-owned MCP
@@ -55,8 +74,8 @@ the judgment it is needed for.
 - Full email bodies MUST NOT be persisted or logged. The store keeps only the subject, extracted
   fields, a short evidence string, and IDs.
 - Email bodies are sent only to the configured LLM provider, and are truncated to a bounded length.
-- The README MUST state which provider receives email content and the provider's data-use terms
-  (for example, whether the free tier may be used for training).
+- The README MUST state that extraction runs on a local Ollama model, so email content does not
+  leave the machine, and that it does leave the machine if `OLLAMA_HOST` points to another host.
 
 ### VI. Clean MCP Contract
 
@@ -76,7 +95,7 @@ the judgment it is needed for.
   visible `NEW` or `UPD` badge.
 - Output MUST stay readable at 100 columns, MUST NOT rely on colour alone to convey status, and
   SHOULD link each company to its Gmail thread where the terminal supports hyperlinks.
-- Expected failures (missing token, missing API key, rate limit, offline) MUST print one actionable
+- Expected failures (missing token, Ollama not running, rate limit, offline) MUST print one actionable
   message and a non-zero exit code, never a stack trace.
 
 ### VIII. Test-First for Deterministic Code
@@ -97,15 +116,17 @@ the judgment it is needed for.
 
 ## Technical Constraints
 
-- **Language:** Python ≥ 3.10, packaged with `pyproject.toml`, installed via `uv` or `pipx`.
-- **Core dependencies:** `mcp` (FastMCP server and stdio client), `google-api-python-client`,
-  `google-auth-oauthlib`, `google-genai`, `pydantic`, `rich`, `python-dotenv`.
-- **Default model:** `gemini-3.1-flash-lite`, overridable via `APPLYTRAIL_MODEL`.
+- **Language:** Python ≥ 3.11, packaged with `pyproject.toml`, installed via `uv` or `pipx`.
+- **Core dependencies:** `mcp` 2.x (`MCPServer` and stdio client), `google-api-python-client`,
+  `google-auth-oauthlib`, `pydantic`, `rich`, `python-dotenv`.
+- **Extraction:** local Ollama over HTTP, called with the standard library (`urllib`). No hosted
+  LLM SDK.
+- **Default model:** `qwen3:4b`, overridable via `APPLYTRAIL_MODEL`.
 - **Authentication:** Google OAuth Desktop-app flow. One-time login via `applytrail-auth`;
   refresh is silent afterwards.
 - **Tooling:** `ruff` for lint and format, `pytest` for tests.
 - **Performance target:** an incremental sync of 20 new emails completes in under 60 seconds on the
-  free tier, including rate-limit backoff.
+  reference laptop (M1 Pro, 16 GB).
 
 ## Development Workflow
 
@@ -131,4 +152,4 @@ that updates this file and the Sync Impact Report, with semantic versioning:
 
 Compliance is checked at the plan stage and in PR review.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+**Version**: 1.1.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14

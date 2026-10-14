@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-005",
+  "thread_id": "thread-golden-005",
+  "date": "2026-06-05T10:20:00Z",
+  "sender": "Tidewater Logistics <jobs@tidewater-logistics.example>",
+  "subject": "Update on your application",
+  "body_text": "Hi Sam, Just a quick update: your application for Backend Developer is now under review by the hiring team. We expect to share more within two weeks. Thanks for your patience. Tidewater Logistics Recruiting",
+  "label": {
+    "is_job_application": true,
+    "company": "Tidewater Logistics",
+    "status": "in_review"
+  }
+}

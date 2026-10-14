@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-029",
+  "thread_id": "thread-golden-029",
+  "date": "2026-07-18T08:00:00Z",
+  "sender": "DevConf Tickets <tickets@devconf.example>",
+  "subject": "Your ticket for DevConf 2026",
+  "body_text": "Hi Sam, thanks for registering for DevConf 2026 on September 12. Your ticket is attached. Don't miss the career fair, where over 40 companies are hiring.",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

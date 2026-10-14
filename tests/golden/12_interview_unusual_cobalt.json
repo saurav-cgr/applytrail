@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-012",
+  "thread_id": "thread-golden-012",
+  "date": "2026-07-01T08:10:00Z",
+  "sender": "Priya at Cobalt Mobility <priya.n@cobaltmobility.example>",
+  "subject": "Quick call next week?",
+  "body_text": "Hi Sam, thanks for your application to the Mobile Engineer role. The hiring manager would like to chat with you next week. Can you share your availability for a 30-minute call on Tuesday or Wednesday? Thanks, Priya, Cobalt Mobility",
+  "label": {
+    "is_job_application": true,
+    "company": "Cobalt Mobility",
+    "status": "interview"
+  }
+}

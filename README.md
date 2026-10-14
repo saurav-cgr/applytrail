@@ -1,0 +1,174 @@
+# ApplyTrail
+
+ApplyTrail is a terminal tool that keeps track of your job applications. It reads
+job-application emails from Gmail (read-only), uses a local Ollama model to pull out the company,
+role and status of each one, and shows the results as a table, newest first. A simplified example:
+
+```text
+     Company                      Role                           Status       Last seen
+NEW  Northwind Labs               Backend Engineer               Interview    2026-10-13
+UPD  Brightwave                   Data Engineer                  Rejected     2026-10-12
+     Halcyon Systems              Platform Engineer              Applied      2026-10-02
+Read 12 emails · 2 new · 1 updated · 8 ignored · 1 skipped
+```
+
+- `NEW` marks an application found in this sync; `UPD` marks one whose status, role or date
+  changed. Badges and statuses are always text; colour only reinforces them.
+- Each run fetches only mail that arrived since the last sync. A run with no new mail changes
+  nothing.
+- An older email never overwrites a newer status.
+
+## Install
+
+Requires Python 3.11 or newer.
+
+```bash
+uv tool install .
+# or
+pipx install .
+```
+
+This installs three commands: `applytrail`, `applytrail-auth` and `applytrail-mcp`.
+
+## Set up Google OAuth
+
+ApplyTrail asks Google for the `gmail.readonly` scope only. It cannot send, delete, label,
+archive or change any email.
+
+1. Create a project in the [Google Cloud console](https://console.cloud.google.com/).
+2. Enable the **Gmail API** for that project.
+3. Configure the OAuth consent screen and add your own Google account as a test user.
+4. Create an OAuth client ID of type **Desktop app** and download its JSON file.
+5. Save the file as `~/.applytrail/credentials.json`.
+6. Run:
+
+   ```bash
+   applytrail-auth
+   ```
+
+   A browser window opens for consent. When it finishes, you see
+   `Gmail read-only access granted. Run applytrail.` and the token is saved to
+   `~/.applytrail/token.json` with mode `0600`.
+
+Run `applytrail-auth` again whenever ApplyTrail reports that Gmail access is not set up or has
+expired.
+
+## Set up Ollama
+
+1. Install Ollama from [ollama.com](https://ollama.com) and start it (the Ollama app, or
+   `ollama serve`).
+2. Pull the extraction model (about 2.5 GB):
+
+   ```bash
+   ollama pull qwen3:4b
+   ```
+
+The model needs about 3 GB of RAM while a sync runs. ApplyTrail asks Ollama to unload it 5
+minutes after the last email.
+
+## Usage
+
+```bash
+applytrail            # sync new mail, save, print the table and a summary line
+applytrail --offline  # print the saved table; no network, no Gmail, no Ollama
+applytrail --version
+applytrail --help
+```
+
+The first sync looks back about six months. With a local model each email takes a few seconds,
+so a large first sync can take a while. Ctrl-C is safe: progress is saved and the next run
+continues where it stopped.
+
+`applytrail --offline` prints the saved table followed by the time of the last sync, for example
+`Last sync: 2026-10-14 08:02 (complete)`. If nothing has been synced yet, it prints
+`No data yet. Run applytrail to sync.`
+
+## Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `APPLYTRAIL_HOME` | `~/.applytrail` | Data folder: store, token, credentials |
+| `APPLYTRAIL_MODEL` | `qwen3:4b` | Ollama model tag used for extraction |
+| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Ollama server (Ollama's own variable). A non-loopback host prints a privacy warning |
+| `APPLYTRAIL_DEBUG` | unset | `1` writes tracebacks (frames and exception types, no messages) to `$APPLYTRAIL_HOME/debug.log` |
+
+A `.env` file in the current directory is loaded if present.
+
+## Exit codes
+
+Expected failures print one line to stderr, never a stack trace.
+
+| Code | Meaning |
+|---|---|
+| 0 | Success, including "nothing new" and `--offline` with no saved data |
+| 1 | Unexpected error (set `APPLYTRAIL_DEBUG=1` for a debug log) |
+| 2 | Setup needed: Gmail access missing or expired (run `applytrail-auth`), Ollama not running, or the model is not pulled |
+| 3 | Cannot reach Gmail; use `applytrail --offline` to view saved data |
+| 4 | Ollama stopped responding, Gmail rate limit, or not enough memory for the model; progress is saved |
+| 5 | The data file cannot be read; move it aside and run `applytrail` to rebuild |
+| 130 | Interrupted with Ctrl-C; progress is saved |
+
+`applytrail-auth` exits 0 when the token is saved, 2 when `credentials.json` is missing, and 1
+when sign-in does not complete.
+
+## Privacy
+
+- Email text is processed only by the local Ollama model. It leaves your machine only if you
+  point `OLLAMA_HOST` at another computer; ApplyTrail prints a warning when that host is not
+  local.
+- Email bodies are never stored or logged. For each application the store keeps the extracted
+  company, role, status and dates, the Gmail message and thread IDs, the subject line, and a
+  short evidence quote from the model (both capped at 200 characters).
+- Email content is treated as untrusted data: nothing in an email can choose an action, run
+  code or fetch a URL.
+- Everything lives in `~/.applytrail` (or `$APPLYTRAIL_HOME`), a folder with mode `0700`:
+
+  | File | Contents |
+  |---|---|
+  | `credentials.json` | Your Google OAuth client (you put it there) |
+  | `token.json` | Gmail read-only access token, mode `0600` |
+  | `applications.json` | Saved applications and sync checkpoint, mode `0600` |
+  | `debug.log` | Only with `APPLYTRAIL_DEBUG=1`; tracebacks without messages |
+
+  Delete the folder to remove all ApplyTrail data. To revoke Gmail access, remove ApplyTrail
+  from [your Google account's third-party access](https://myaccount.google.com/permissions).
+
+## Using the MCP server on its own
+
+`applytrail-mcp` is a read-only Gmail MCP server on stdio. `applytrail` starts it for you, but
+any MCP client can use it. It offers two tools: `search_job_emails` and `get_email`. It uses the
+same `token.json`, so run `applytrail-auth` first.
+
+Try it with the MCP Inspector:
+
+```bash
+npx @modelcontextprotocol/inspector applytrail-mcp
+```
+
+Or add it to Claude Desktop's `claude_desktop_config.json` (use the full path that
+`which applytrail-mcp` prints):
+
+```json
+{
+  "mcpServers": {
+    "applytrail-gmail": {
+      "command": "/Users/you/.local/bin/applytrail-mcp",
+      "env": { "APPLYTRAIL_HOME": "/Users/you/.applytrail" }
+    }
+  }
+}
+```
+
+Email text returned by these tools goes to whichever model the client uses, so the
+local-only guarantee above applies to `applytrail` itself, not to other MCP clients.
+
+## Development
+
+```bash
+uv sync                                               # install with dev tools
+uv run pytest                                         # tests (never call Gmail or a live model)
+uv run ruff check . && uv run ruff format --check .   # lint and format
+uv run python scripts/eval_extractor.py               # golden-set eval (needs Ollama)
+```
+
+See `AGENTS.md` for project rules and `specs/001-gmail-sync-table/` for the design.

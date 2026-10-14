@@ -6,4 +6,19 @@ __pycache__/
 .env
 credentials.json
 token.json
+token.json.tmp
 .applytrail/
+
+# Local agent tooling
+.agents/
+.claude/
+.serena/
+
+# Local store, logs, build and tool caches (Constitution Principle V)
+applications.json
+applications.json.tmp
+debug.log
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/

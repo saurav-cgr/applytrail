@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-009",
+  "thread_id": "thread-golden-009",
+  "date": "2026-06-20T15:40:00Z",
+  "sender": "Larkspur Games <recruiting@larkspurgames.example>",
+  "subject": "Larkspur Games - take-home exercise",
+  "body_text": "Hi Sam, Great speaking with you! As discussed, please find the take-home exercise for the Gameplay Programmer role in our portal. Please submit your solution within 5 days. Best of luck, Larkspur Games Recruiting",
+  "label": {
+    "is_job_application": true,
+    "company": "Larkspur Games",
+    "status": "assessment"
+  }
+}

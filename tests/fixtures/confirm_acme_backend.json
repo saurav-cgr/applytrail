@@ -1,0 +1,15 @@
+{
+  "message_id": "msg-acme-001",
+  "thread_id": "thread-acme-backend",
+  "date": "2026-09-30T08:11:00Z",
+  "sender": "Acme Recruiting <no-reply@acme-careers.example>",
+  "subject": "Thank you for applying to Acme Inc.",
+  "body_text": "Hi Alex,\n\nThank you for applying for the Backend Engineer position at Acme Inc. We received your application and our team will review it shortly.\n\nAcme Talent Team",
+  "expected": {
+    "is_job_application": true,
+    "company": "Acme Inc.",
+    "role": "Backend Engineer",
+    "status": "applied",
+    "evidence": "We received your application"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-011",
+  "thread_id": "thread-golden-011",
+  "date": "2026-06-26T17:25:00Z",
+  "sender": "Northwind Analytics <no-reply@greenhouse.io>",
+  "subject": "Interview invitation - Senior Data Engineer",
+  "body_text": "Hi Sam, We'd love to move forward with a 45-minute video interview with our engineering lead for the Senior Data Engineer role. Please choose a time that works for you using the scheduling link. Northwind Analytics Recruiting",
+  "label": {
+    "is_job_application": true,
+    "company": "Northwind Analytics",
+    "status": "interview"
+  }
+}

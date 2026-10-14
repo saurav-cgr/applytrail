@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-019",
+  "thread_id": "thread-golden-019",
+  "date": "2026-08-03T12:30:00Z",
+  "sender": "Fernhill Media <talent@fernhillmedia.example>",
+  "subject": "Application withdrawn",
+  "body_text": "Dear Sam, This confirms that you have withdrawn your application for the Product Engineer role. Thank you for letting us know, and we hope our paths cross again. Fernhill Media",
+  "label": {
+    "is_job_application": true,
+    "company": "Fernhill Media",
+    "status": "withdrawn"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-021",
+  "thread_id": "thread-golden-021",
+  "date": "2026-05-06T06:00:00Z",
+  "sender": "CareerFeed Job Alerts <jobs-noreply@careerfeed.example>",
+  "subject": "10 new jobs for Backend Engineer in your area",
+  "body_text": "Backend Engineer - Granite Cloud - Remote. Senior Backend Engineer - Ostrava Tech - Hybrid. Platform Engineer - Lumen Retail - On-site. Apply now with one click. You are receiving this job alert because you subscribed. Unsubscribe.",
+  "label": {
+    "is_job_application": false,
+    "company": "",
+    "status": "unknown"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-007",
+  "thread_id": "thread-golden-007",
+  "date": "2026-06-12T11:11:00Z",
+  "sender": "Fernhill Media <talent@fernhillmedia.example>",
+  "subject": "Your candidacy at Fernhill Media",
+  "body_text": "Dear Sam, A short note on your candidacy for Product Engineer: we are still reviewing applications and will be in touch once the team has finished its first pass. Warm regards, Fernhill Media",
+  "label": {
+    "is_job_application": true,
+    "company": "Fernhill Media",
+    "status": "in_review"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "message_id": "golden-020",
+  "thread_id": "thread-golden-020",
+  "date": "2026-08-05T16:20:00Z",
+  "sender": "Quillon Software <no-reply@ashbyhq.com>",
+  "subject": "Your application has been withdrawn",
+  "body_text": "Hi Sam, As requested, your application for Software Engineer, Payments at Quillon Software has been withdrawn. If you change your mind, you're welcome to apply again. Quillon Talent",
+  "label": {
+    "is_job_application": true,
+    "company": "Quillon Software",
+    "status": "withdrawn"
+  }
+}

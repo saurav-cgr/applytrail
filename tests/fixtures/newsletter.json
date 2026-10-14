@@ -1,0 +1,15 @@
+{
+  "message_id": "msg-news-001",
+  "thread_id": "thread-msg-news-001",
+  "date": "2026-10-06T07:00:00Z",
+  "sender": "Weekly Dev Digest <digest@devnews.example>",
+  "subject": "This week in backend engineering",
+  "body_text": "Top stories: five tips for faster CI, a deep dive into connection pooling, and our hiring roundup.\n\nUnsubscribe at any time.",
+  "expected": {
+    "is_job_application": false,
+    "company": "",
+    "role": null,
+    "status": "unknown",
+    "evidence": ""
+  }
+}
