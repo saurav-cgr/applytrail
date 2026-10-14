@@ -46,11 +46,14 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 
 ## Guardrails
 - Human sign-off required before done: true
+- Closure exception (human, 2026-10-14): D4 may remain human-signed rather than checker-pass, with the failed zero-leak gate explicitly accepted as DEBT-001. All other criteria require checker-pass.
 - Comprehension debt tracked: true
 - Open blocking debt blocks done: true
 - Manual gates T025 (D4) and T044 (D9) require a human run; maker pauses and records debt, never fakes RESULTS.md.
 - Do not start T028+ until D4 is human-signed (tasks.md T025).
 
 ## State
-- Phase: checked
+- Phase: done
 - Last updated: 2026-10-14
+
+- Closure sign-off: saurav-cgr explicitly signed off in chat on 2026-10-14, accepting D4's human-signed exception and the recorded risks (DEBT-001 and DEBT-002). See debt.md.
