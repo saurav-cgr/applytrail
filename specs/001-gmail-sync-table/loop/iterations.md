@@ -52,15 +52,15 @@ now ready for the checker.
 ## Iteration 3 — 2026-10-14
 - Targeted criteria: D1 (checker-fail, verdict V001)
 - Worktree: `../applytrail-loop-iter-3` on temporary branch `loop-iter-3` from `bc1b182`; fast-forwarded into `001-gmail-sync-table`, then worktree and branch removed. Checker's uncommitted `loop.md`/`verdicts.md` edits stayed in the main tree.
-- Change (commit `6384612 fix(store): ...`):
+- Change (first committed as `6384612 fix(store): ...`; on human request folded into the foundation commit, now `7818ce5 chore: project setup and foundational modules`; later commits replayed as `6c60c26`, `d0a59f2`, `812f780`; pre-squash history kept at branch `backup/pre-squash-iter3`):
   - Tests first, confirmed failing (9 failures): `tests/unit/test_models.py` (schema_version `True`/`1.0`/`"1"`/`None`/`0`/`2`; completion via flag only, stop_reason only, both), `tests/unit/test_store.py` (load rejects boolean/float version; save refuses to overwrite a corrupt or invalid file and leaves its bytes intact; save refuses an invalid in-memory store; stale temp file is replaced; temp symlink cannot truncate the original on failed rename).
   - `src/applytrail/models.py:137`: `Store._version_is_an_integer` before-validator requires `type(value) is int` (`Strict()` cannot be applied to `Literal`).
   - `src/applytrail/models.py:122`: completion means `last_sync_complete or stop_reason == "complete"`; either requires `pending == 0`.
   - `src/applytrail/store.py:27`: `save` re-validates the store from its JSON dump before writing; calls `load(path)` on the destination (raises `StoreUnreadable` if it exists and does not load); unlinks any leftover temp entry, then opens it with `O_CREAT | O_EXCL | O_NOFOLLOW`.
 - Verification run by maker: checker's V001 reproduction script now prints rejection for all four probes; `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 115 passed.
-- Maker self-assessment (maker's own view, NOT a verdict): D1 ready for re-check.
+- Maker self-assessment (maker's own view, NOT a verdict): D1 and D2 ready for re-check.
 - Open questions / risks:
-  - D2 says "foundation landed as one commit". Fixes are a separate `fix(store)` commit after `68e21e2`, not squashed, to avoid rewriting history. Checker or human to decide whether D2 still holds or the two should be squashed.
+  - D2: human ruled D2 is strictly one commit. Fix squashed into the foundation commit (`68e21e2` became `7818ce5`); tree at HEAD identical to pre-squash HEAD (`git diff backup/pre-squash-iter3 HEAD` empty). Verdicts V001/V002 cite `68e21e2`, which no longer exists on the branch; D2 needs a re-check against `7818ce5`.
   - `save` now reads and validates the existing file on every save (every 10 emails). Fine for a few thousand entries; revisit only if T040 perf shows it.
   - A save over an invalid in-memory store raises `pydantic.ValidationError` (programming error), not an `AppError`.
 - Handoff: ready-for-check
