@@ -316,3 +316,16 @@ now ready for the checker.
 - Maker self-assessment (maker's own view, NOT a verdict): US2 tasks done. D6 not ready: the single `feat(us2)` commit is still to do.
 - Open questions / risks: the two iteration-17 decisions (`network` as the stop reason for every non-Ollama stop; badges reset only after a successful search) are still open for a human or the checker.
 - Handoff: not ready for check yet. Next maker iteration: squash `us2-wip` into one `feat(us2): ...` commit (backup branch first), then D6 goes to the checker.
+
+## Iteration 19 — 2026-10-14
+- Targeted criteria: D6 (US2 landed as one commit)
+- Worktree: in place on `001-gmail-sync-table` (a squash merge has to land on the feature branch)
+- Change:
+  - Kept `backup/pre-squash-us2` at `e3d9f32` (both `wip(us2)` commits).
+  - `git merge --squash us2-wip` onto `62b0038`: no overlap. US2 touched no loop files, and the feature branch touched only loop files since the fork.
+  - Committed `7ebc719 feat(us2): show what changed since the last sync`: 7 files, +459/−69 (`merge.py`, `sync.py`, `tests/fakes.py`, `test_merge.py`, `test_sync_incremental.py`, `test_render.py`, `tasks.md`).
+  - Deleted `us2-wip`; the backup branch keeps it.
+- Verification run by maker on the squashed tree before committing: ruff check and format pass; `uv run pytest` 449 passed; the D6 command `uv run pytest tests/unit/test_merge.py tests/integration/test_sync_incremental.py tests/unit/test_render.py` 66 passed. The SC-004 test is `test_sync_incremental.py::test_no_new_mail_changes_nothing`, plus `test_render.py::test_second_sync_with_no_changes_shows_no_badges`.
+- Maker self-assessment (maker's own view, NOT a verdict): D6 maker-ready.
+- Open questions / risks (from iteration 17, still open): every stop not caused by Ollama is stored as `network`; badges reset only after a successful search.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D6 (commit `7ebc719`).

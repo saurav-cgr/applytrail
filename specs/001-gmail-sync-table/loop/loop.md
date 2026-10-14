@@ -11,7 +11,7 @@
 | D3 | US1 automatable tasks (T015–T024, T026–T033) done | `uv run pytest` exits 0 incl. `test_gmail_client`, `contract/test_mcp_tools`, `test_extractor`, `test_merge`, `integration/test_sync_first_run`, `test_render`, `test_cli`; tasks checked | checker-pass |
 | D4 | T025 extractor gate passed (manual, Ollama) | `tests/golden/RESULTS.md` has a row with model, accuracy ≥ 90%, 0 non-job leaks, date (SC-003); human signs off in debt.md | human-signed |
 | D5 | US1 landed as exactly one commit | One `feat(us1): ...` commit containing all Phase 3 files; `uv run pytest` green at that commit | checker-pass |
-| D6 | US2 (T034–T037) done and landed as one `feat(us2): ...` commit | `uv run pytest tests/unit/test_merge.py tests/integration/test_sync_incremental.py tests/unit/test_render.py` exits 0 at that commit; second sync yields zero changes/badges (SC-004 test) | pending |
+| D6 | US2 (T034–T037) done and landed as one `feat(us2): ...` commit | `uv run pytest tests/unit/test_merge.py tests/integration/test_sync_incremental.py tests/unit/test_render.py` exits 0 at that commit; second sync yields zero changes/badges (SC-004 test) | maker-ready |
 | D7 | US3 (T038–T040) done and landed as one `feat(us3): ...` commit | `uv run pytest tests/unit/test_cli.py tests/unit/test_render_perf.py` exits 0 at that commit; perf test asserts < 2 s for 500 rows (SC-002) | pending |
 | D8 | Polish (T041–T043) done | `uv run ruff check . && uv run ruff format --check . && uv run pytest` exits 0; `grep -rn "google.genai\|import ollama" src/` empty; `grep -rn "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` empty; README.md exists | pending |
 | D9 | T044 quickstart validation on real mailbox (manual) | `tests/golden/RESULTS.md` records Scenarios 1–6 + 3b timing ≤ 60 s (SC-001); human signs off | pending |
@@ -20,7 +20,7 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 
 ## Budget
 - Max iterations: 50
-- Iterations run: 18
+- Iterations run: 19
 - Isolation: worktree
 - Per-iteration scope: one phase, or one test+implementation task pair, per iteration. Never span two user stories in one iteration.
 
