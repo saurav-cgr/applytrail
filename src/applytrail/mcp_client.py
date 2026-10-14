@@ -1,7 +1,7 @@
 """The CLI side of the MCP protocol: spawn `applytrail-mcp` over stdio and wrap its two tools.
 
-The rest of the CLI is synchronous, so the async `mcp.Client` runs in an anyio blocking portal
-(an event loop on a helper thread) for the lifetime of the context manager.
+The rest of the CLI is synchronous, so the async-only `fastmcp.Client` runs in an anyio blocking
+portal (an event loop on a helper thread) for the lifetime of the context manager.
 """
 
 import os
@@ -9,11 +9,13 @@ import re
 import sys
 from contextlib import ExitStack
 from datetime import datetime
+from functools import partial
 from typing import Any, Self
 
 from anyio.from_thread import BlockingPortal, start_blocking_portal
-from mcp import Client, StdioServerParameters
-from mcp.types import CallToolResult
+from fastmcp import Client
+from fastmcp.client.client import CallToolResult
+from fastmcp.client.transports import StdioTransport
 
 from applytrail.config import Settings
 from applytrail.errors import (
@@ -39,10 +41,10 @@ class GmailMcp:
         self._portal: BlockingPortal | None = None
         self._client: Client | None = None
 
-    def server_parameters(self) -> StdioServerParameters:
+    def server_parameters(self) -> StdioTransport:
         # The full environment is passed on: PATH, proxy settings and certificates are needed
         # for Gmail. APPLYTRAIL_HOME is set explicitly so the server finds the same token.
-        return StdioServerParameters(
+        return StdioTransport(
             command=sys.executable,
             args=["-m", "applytrail.mcp_server"],
             env={**os.environ, "APPLYTRAIL_HOME": str(self.settings.home)},
@@ -79,7 +81,8 @@ class GmailMcp:
     def _call(self, name: str, arguments: dict[str, Any]) -> CallToolResult:
         if self._portal is None or self._client is None:
             raise RuntimeError("GmailMcp must be used as a context manager")
-        result = self._portal.call(self._client.call_tool, name, arguments)
+        call = partial(self._client.call_tool, name, arguments, raise_on_error=False)
+        result = self._portal.call(call)
         if result.is_error:
             raise _error_from_text(_text(result))
         return result
@@ -98,5 +101,6 @@ def _error_from_text(text: str) -> AppError:
     if text.startswith("RATE_LIMITED:"):
         return GmailRateLimited()
     match = _GMAIL_STATUS.match(text)
-    # Anything else (including the SDK's generic text for a server-side crash) is a Gmail error.
+    # Anything else (including FastMCP's masked "Error calling tool '...'" text for a server-side
+    # crash) is a Gmail error.
     return GmailError(int(match.group(1)) if match else "unknown")

@@ -1,4 +1,4 @@
-"""MCP tool contract (contracts/mcp-tools.md) through an in-process `mcp.Client`. No Gmail."""
+"""MCP tool contract (contracts/mcp-tools.md) through an in-process `fastmcp.Client`. No Gmail."""
 
 import os
 import socket
@@ -7,8 +7,9 @@ import sys
 import anyio
 import httplib2
 import pytest
+from fastmcp import Client
+from fastmcp.client.transports import StdioTransport
 from googleapiclient.errors import HttpError
-from mcp import Client, StdioServerParameters
 
 from applytrail import gmail_auth, gmail_client, mcp_server
 from applytrail.errors import AuthRequired
@@ -52,11 +53,11 @@ def run(action):
 
 
 def call(name, arguments):
-    return run(lambda client: client.call_tool(name, arguments))
+    return run(lambda client: client.call_tool(name, arguments, raise_on_error=False))
 
 
 def tools():
-    return {tool.name: tool for tool in run(lambda client: client.list_tools()).tools}
+    return {tool.name: tool for tool in run(lambda client: client.list_tools())}
 
 
 def error_text(result):
@@ -215,6 +216,13 @@ def test_gmail_error_text_carries_status(gmail):
     assert error_text(call("get_email", {"message_id": "m1"})) == "GMAIL_ERROR: HTTP 503"
 
 
+def test_unexpected_failure_is_masked(gmail):
+    gmail.service = FakeGmailService(messages=[])  # unknown ID: the server crashes internally
+    text = error_text(call("get_email", {"message_id": "missing-id"}))
+    assert text == "Error calling tool 'get_email'"
+    assert "NoneType" not in text
+
+
 def test_server_never_prints_to_stdout(gmail, capfd):
     call("search_job_emails", {"after": AFTER})
     call("get_email", {"message_id": "missing-id"})
@@ -233,16 +241,18 @@ def test_output_schemas_are_advertised():
 
 def test_stdio_server_without_token_reports_auth_required(tmp_path):
     """Spawn the real `python -m applytrail.mcp_server` over stdio. No token, so no Gmail call."""
-    params = StdioServerParameters(
+    transport = StdioTransport(
         command=sys.executable,
         args=["-m", "applytrail.mcp_server"],
         env={**os.environ, "APPLYTRAIL_HOME": str(tmp_path / "empty-home")},
     )
 
     async def main():
-        async with Client(params) as client:
-            names = {tool.name for tool in (await client.list_tools()).tools}
-            result = await client.call_tool("search_job_emails", {"after": AFTER})
+        async with Client(transport) as client:
+            names = {tool.name for tool in await client.list_tools()}
+            result = await client.call_tool(
+                "search_job_emails", {"after": AFTER}, raise_on_error=False
+            )
             return names, result
 
     names, result = anyio.run(main)

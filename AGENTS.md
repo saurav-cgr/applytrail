@@ -16,7 +16,8 @@ renders a newest-first Rich table with `NEW`/`UPD` badges. It ships a stdio MCP 
 ## Stack
 
 - Python 3.11+, `src/` layout, package `src/applytrail/`, built with hatchling, managed with `uv`.
-- Dependencies: `mcp` 2.x (`MCPServer`, `Client`), `google-api-python-client`,
+- Dependencies: `fastmcp` 4.x (`FastMCP` server, `fastmcp.Client` + `StdioTransport`; `mcp` 2.x
+  is its protocol layer, never imported directly), `google-api-python-client`,
   `google-auth-oauthlib`, `pydantic` v2, `rich`, `python-dotenv`.
 - Extraction: local Ollama, default model `qwen3:4b` (`APPLYTRAIL_MODEL`), called through stdlib
   `urllib`. Do NOT add `google-genai` or the `ollama` package.

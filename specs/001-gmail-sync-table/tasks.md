@@ -565,14 +565,14 @@ changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
 
 ### Dependency
 
-- [ ] T045 Update `pyproject.toml`: replace `"mcp>=2.3,<3"` with `"fastmcp>=4.1,<5"`. Run `uv lock`
+- [x] T045 Update `pyproject.toml`: replace `"mcp>=2.3,<3"` with `"fastmcp>=4.1,<5"`. Run `uv lock`
   and `uv sync`. Confirm with `uv run python -c "import importlib.metadata as m;
   print(m.version('fastmcp'), m.version('mcp'))"` that `fastmcp` is 4.x and `mcp` is 2.3.x (now
   pulled in transitively). Keep `requires-python = ">=3.11"`.
 
 ### Tests first (update the call sites; the assertions stay the same)
 
-- [ ] T046 [P] [US1] Update `tests/contract/test_mcp_tools.py` to use FastMCP:
+- [x] T046 [P] [US1] Update `tests/contract/test_mcp_tools.py` to use FastMCP:
   - Imports: `from fastmcp import Client` and `from fastmcp.client.transports import
     StdioTransport`. Remove the `mcp` imports.
   - Update the module docstring to say `fastmcp.Client`.
@@ -593,7 +593,7 @@ changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
   - Add one test: an unexpected server exception gives `is_error=True`, and its text contains no
     exception detail.
   - Run the file. It must fail until T048 is done, because the server is still `MCPServer`.
-- [ ] T047 [P] [US1] Update `tests/unit/test_mcp_client.py`:
+- [x] T047 [P] [US1] Update `tests/unit/test_mcp_client.py`:
   - `test_spawn_parameters` asserts on the `StdioTransport` returned by
     `GmailMcp(settings).server_parameters()`: `.command == sys.executable`, `.args == ["-m", "applytrail.mcp_server"]`,
     `.env["APPLYTRAIL_HOME"]`, `.env["PATH"]`.
@@ -604,7 +604,7 @@ changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
 
 ### Implementation
 
-- [ ] T048 [US1] Rewrite `src/applytrail/mcp_server.py` on FastMCP so T046 passes:
+- [x] T048 [US1] Rewrite `src/applytrail/mcp_server.py` on FastMCP so T046 passes:
   - `from fastmcp import FastMCP` and `from fastmcp.exceptions import ToolError`. Remove the
     `mcp.server.mcpserver` and `mcp.types` imports.
   - `server = FastMCP("applytrail-gmail", mask_error_details=True)`.
@@ -620,7 +620,7 @@ changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
     `ToolError` text through verbatim.
   - `main()`: logging to stderr as today, then `server.run("stdio", show_banner=False)`. Nothing
     may be written to stdout outside the protocol (Principle VI).
-- [ ] T049 [US1] Update `src/applytrail/mcp_client.py` for `fastmcp.Client` so T047 passes:
+- [x] T049 [US1] Update `src/applytrail/mcp_client.py` for `fastmcp.Client` so T047 passes:
   - Imports: `from fastmcp import Client`, `from fastmcp.client.transports import
     StdioTransport`, and `from fastmcp.client.client import CallToolResult` (verified path in 4.1.0). Remove the `mcp` imports.
   - `server_parameters() -> StdioTransport` with the same `command`, `args`, and `env` as
@@ -631,19 +631,19 @@ changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
     raise_on_error=False))`. The `is_error` → `_error_from_text` path is unchanged.
   - Keep `_text` and `_error_from_text` as they are. Update the module docstring:
     `fastmcp.Client` (async-only) runs in an anyio blocking portal.
-- [ ] T050 [US1] Run `uv run pytest tests/contract tests/unit/test_mcp_client.py tests/integration -q`
+- [x] T050 [US1] Run `uv run pytest tests/contract tests/unit/test_mcp_client.py tests/integration -q`
   and `uv run pytest`. Everything must pass with no assertion changed outside T046 and T047.
   Confirm with `grep -rn "from mcp\b\|import mcp\b\|MCPServer\|StdioServerParameters" src tests`
   that nothing is left.
 
 ### Docs and governance
 
-- [ ] T051 [P] Update `AGENTS.md` line 19: dependencies `fastmcp` 4.x (`FastMCP` server,
+- [x] T051 [P] Update `AGENTS.md` line 19: dependencies `fastmcp` 4.x (`FastMCP` server,
   `fastmcp.Client` + `StdioTransport`; `mcp` 2.x protocol layer).
-- [ ] T052 [P] Update `README.md` "Using the MCP server on its own": add
+- [x] T052 [P] Update `README.md` "Using the MCP server on its own": add
   `fastmcp list --command "applytrail-mcp"` as an inspector option that needs no Node. Keep the
   MCP Inspector and Claude Desktop snippets.
-- [ ] T053 [P] Draft a PATCH constitution amendment in `.specify/memory/constitution.md`:
+- [x] T053 [P] Draft a PATCH constitution amendment in `.specify/memory/constitution.md`:
   - Technical Constraints "`mcp` 2.x (`MCPServer` and stdio client)" becomes "`fastmcp` 4.x
     (`FastMCP` server and client; `mcp` 2.x protocol layer)".
   - Bump the patch version and update the Sync Impact Report.

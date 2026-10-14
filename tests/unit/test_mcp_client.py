@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 import httplib2
 import pytest
+from fastmcp.client.transports import StdioTransport
 from googleapiclient.errors import HttpError
 
 from applytrail import gmail_auth, gmail_client, mcp_server
@@ -122,6 +123,7 @@ def test_unexpected_server_failure_is_a_gmail_error(settings, gmail):
 
 def test_spawn_parameters(settings):
     params = GmailMcp(settings).server_parameters()
+    assert isinstance(params, StdioTransport)
     assert params.command == sys.executable
     assert params.args == ["-m", "applytrail.mcp_server"]
     assert params.env["APPLYTRAIL_HOME"] == str(settings.home)

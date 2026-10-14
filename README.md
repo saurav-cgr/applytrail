@@ -145,6 +145,19 @@ Try it with the MCP Inspector:
 npx @modelcontextprotocol/inspector applytrail-mcp
 ```
 
+Or, without Node, with the FastMCP CLI that ships with ApplyTrail (from a source checkout,
+prefix `uv run`):
+
+```bash
+fastmcp list --command "applytrail-mcp" --input-schema --output-schema
+fastmcp call --command "env APPLYTRAIL_HOME=$HOME/.applytrail applytrail-mcp" \
+  --target search_job_emails --input-json '{"after": "2026-10-01T00:00:00Z"}'
+```
+
+The `fastmcp` CLI does not pass your shell's environment to the server, so set
+`APPLYTRAIL_HOME` inside `--command` as shown. Otherwise the server uses the default
+`~/.applytrail`.
+
 Or add it to Claude Desktop's `claude_desktop_config.json` (use the full path that
 `which applytrail-mcp` prints):
 
