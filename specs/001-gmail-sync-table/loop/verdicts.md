@@ -7,6 +7,8 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 |----|-----------|-----------|-------------------------|---------|------------|------|
 | V001 | 2 | D1 | Independent `uv sync` (exit 0), targeted pytest (68 passed), full pytest (101 passed), Ruff lint/format (exit 0); source and task audit; adversarial probes below violate T007/T012 and the store contract | fail | high | 2026-10-14 |
 | V002 | 2 | D2 | `git log --oneline -8`, `git show --stat 68e21e2`: one foundation commit, 34 files confined to T001–T014; `git diff 68e21e2 HEAD -- src tests pyproject.toml uv.lock specs/001-gmail-sync-table/tasks.md` empty | pass | high | 2026-10-14 |
+| V003 | 3 | D1 | Independent uv sync exit 0; targeted pytest 82 passed; full pytest 115 passed; Ruff lint/format exit 0; source/task audit and disposable-directory schema, completion, corrupt-destination, temporary-symlink/failed-rename probes | pass | high | 2026-10-14 |
+| V004 | 3 | D2 | git log and git show --stat 7818ce5: exactly one foundation commit, 34 Phase 1–2 files; git diff 7818ce5 HEAD -- src tests pyproject.toml uv.lock specs/001-gmail-sync-table/tasks.md empty | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -91,3 +93,46 @@ No targeted criterion is uncertain; no comprehension-debt item was opened. D3–
 pending and were not graded. Run `/speckit.loop.run` to address D1 before advancing to US1.
 This check does not close the loop; final closure still requires `/speckit.loop.guard` and
 human sign-off.
+
+## Iteration 3 independent re-check — 2026-10-14
+
+Checked clean branch `001-gmail-sync-table` at `19ff626`. This checker session did not
+produce maker iteration 3. The isolation worktree was removed after integration; checks
+ran against the integrated feature branch. One checker vote; no additional votes required.
+Implementation and `iterations.md` remain untouched.
+
+### D1: pass
+
+`uv sync` exited 0. The exact contracted targeted test command passed 82 tests;
+`uv run pytest` passed all 115. Both Ruff checks exited 0. T001–T014 are checked;
+package, errors, configuration, models, normalization, store, fixtures and fakes exist.
+
+Independent `uv run python` assertions against the installed implementation confirmed:
+
+- Versions `True`, `1.0`, `"1"`, `None`, `0`, and `2` raise `ValidationError`.
+- Completion through the flag, stop reason, or both rejects `pending=2`.
+- Saving over malformed JSON or a boolean schema version raises `StoreUnreadable`
+  and preserves the original bytes.
+- With the temporary path symlinked to the destination, an injected `os.replace`
+  failure preserves original bytes and removes the temporary entry. A subsequent
+  successful save with the same symlink setup round-trips `pending=5` safely.
+
+These probes used `TemporaryDirectory` and `unittest.mock.patch.object`, with assertions
+on exceptions, bytes, loaded state and temporary-file removal. Regression tests in
+`tests/unit/test_models.py` and `tests/unit/test_store.py` retain the previous failure cases.
+All four V001 failures are resolved; V003 supersedes that failure for current code.
+
+### D2: pass
+
+The current branch contains exactly one foundation commit, `7818ce5`, including the store
+fixes. Its 34 files remain confined to T001–T014. No foundation implementation, tests,
+package metadata, lockfile or task status changed after that commit (scoped diff empty).
+V004 re-establishes the verdict against the rewritten history; V002 remains historical.
+
+### Routing and limits
+
+No failures or uncertain targeted criteria; no new debt opened. D3–D9 remain pending and
+unchecked. Continue with `/speckit.loop.run`. This is not loop closure: all criteria must
+pass before `/speckit.loop.guard` and human sign-off. No live Gmail/Ollama or minimum-Python
+runtime checks were performed. The existing constitution/provider mismatch remains a
+planned governance follow-up, not a completed amendment.
