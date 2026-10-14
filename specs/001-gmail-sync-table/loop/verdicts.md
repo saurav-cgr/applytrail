@@ -11,6 +11,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V004 | 3 | D2 | git log and git show --stat 7818ce5: exactly one foundation commit, 34 Phase 1–2 files; git diff 7818ce5 HEAD -- src tests pyproject.toml uv.lock specs/001-gmail-sync-table/tasks.md empty | pass | high | 2026-10-14 |
 | V005 | 14 | D3 | Clean detached worktree at us1-wip b570565; independent full pytest 424 passed, Ruff lint/format passed, US1 task checkboxes audited; synthetic role, debug privacy and malformed .env probes reproduce failures below | fail | high | 2026-10-14 |
 | V006 | 15 | D3 | Clean detached worktree at us1-wip 865e255; independent full pytest 428 passed, Ruff lint/format passed, US1 tasks checked; literal-role, exception-chain/notes privacy and real malformed .env probes passed | pass | high | 2026-10-14 |
+| V007 | 16 | D5 | Exact commit d3fa14b in clean detached worktree: 428 pytest tests passed, Ruff lint/format passed; git history has exactly one feat(us1) commit; full non-loop tree matches reviewed 865e255; task and changed-path audit passed | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -248,3 +249,37 @@ The loop is not done; final closure still requires all remaining criteria and
 `/speckit.loop.guard` with human sign-off. Live Gmail/Ollama, real-mail accuracy and
 minimum-Python execution remain unchecked. The accepted extraction injection risk
 and planned constitution/provider amendment remain outstanding limitations.
+
+## Iteration 16 independent check — 2026-10-14
+
+This checker did not produce maker iteration 16 or the US1 implementation. Only
+D5 was maker-ready; configuration requires one independent vote. Verification ran
+in a clean detached worktree at `d3fa14b`, not merely at current HEAD.
+
+### D5: pass (high confidence)
+
+- Feature-branch history contains exactly one `feat(us1):` commit:
+  `d3fa14b feat(us1): sync Gmail job emails into a local table`. It has one parent.
+- Audited all 68 changed paths: Phase 3 modules, tests, golden fixtures/evaluation
+  records and supporting model/store/fake and spec changes. No loop records or
+  credentials, token, environment or application-store files are included.
+- Attempted to detect omitted squash changes by comparing the complete tree to
+  `backup/pre-squash-us1` at `865e255`. Differences are confined to loop records;
+  all implementation, tests and supporting artifacts match the V006-reviewed tree.
+  Commits after `d3fa14b` also change only loop records.
+- At the exact story commit, T015–T033 are checked, while T034–T044 remain pending.
+  Required Gmail/auth, MCP, extractor, merge, sync, render and CLI modules are all
+  included in the story commit.
+- Independent `uv run pytest`: 428 passed in 6.91 seconds on Python 3.14.7.
+  `uv run ruff check .` and `uv run ruff format --check .`: pass, 40 files formatted.
+  Worktree status remained clean. Initial uv cache access was blocked by the sandbox;
+  the approved escalated rerun succeeded.
+
+No failures, uncertain criteria or new debt. Implementation and `iterations.md`
+were not edited. D1–D3 retain prior passes; D4 retains its human-accepted DEBT-001
+deviation. D6–D9 remain pending. Continue with `/speckit.loop.run` for US2 (D6).
+This is not loop closure; final closure still requires the remaining criteria and
+`/speckit.loop.guard` with human sign-off.
+
+Live Gmail/Ollama and minimum-Python execution were not checked. The accepted
+extraction injection risk and planned constitution/provider amendment remain.
