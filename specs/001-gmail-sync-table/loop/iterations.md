@@ -379,3 +379,4 @@ now ready for the checker.
 - Maker self-assessment (maker's own view, NOT a verdict): D7 maker-ready.
 - Open questions / risks: the iteration-21 decisions are still open for review. A synced store with no applications prints the table message plus the last-sync line, not "No data yet". The wording for an incomplete sync with nothing pending is the maker's own.
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D7 (commit `fa757fd`).
+- Human ruling (2026-10-14, after iteration 22): both iteration-21 decisions are accepted. A synced store with no applications shows `No job applications found yet.` plus the last-sync line. An incomplete sync with nothing pending shows `(incomplete; run applytrail to continue)`. `contracts/cli.md` is unchanged, so the US3 commit keeps its single-commit boundary.
