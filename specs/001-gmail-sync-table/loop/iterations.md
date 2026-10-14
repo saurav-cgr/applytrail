@@ -216,5 +216,5 @@ now ready for the checker.
   - `on_progress(k, n)`: `(0, n)` once the candidate list is known (lets the CLI print the >50 estimate line), then `(k, n)` before email k. Not specified by the task; the maker's design.
   - Checkpoint uses the max processed `EmailMeta.date` and never moves backwards (`max` with the existing checkpoint). An empty run leaves the checkpoint `None`, so the next run searches 182 days again.
   - `run_sync` saves at the end itself; T033 also lists `store.save` after `run_sync`, which will be a redundant second write.
-  - T025 is still unchecked in `tasks.md` on `us1-wip` although D4 is human-signed with DEBT-001; the maker left it for the human, since the gate text says "until a model passes".
+  - T025 was left unchecked in `tasks.md`; the human asked for it to be checked after this iteration (`3c99d95` on `us1-wip`, D4 signed with DEBT-001).
 - Handoff: continue maker (D3 incomplete). Next: T030–T031 (render).
