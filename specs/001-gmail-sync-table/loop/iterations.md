@@ -218,3 +218,19 @@ now ready for the checker.
   - `run_sync` saves at the end itself; T033 also lists `store.save` after `run_sync`, which will be a redundant second write.
   - T025 was left unchecked in `tasks.md`; the human asked for it to be checked after this iteration (`3c99d95` on `us1-wip`, D4 signed with DEBT-001).
 - Handoff: continue maker (D3 incomplete). Next: T030–T031 (render).
+
+## Iteration 13 — 2026-10-14
+- Targeted criteria: D3 (partial: T030–T031 test+implementation pair)
+- Worktree: `../applytrail-loop-iter-13` on `us1-wip` (M-009); removed after commit.
+- Change (commit `fdcd361 wip(us1): table and summary rendering (T030-T031)` on `us1-wip`):
+  - Test first, confirmed failing at collection (`ImportError`, no `render` module): `tests/unit/test_render.py`, 18 tests on `Console(record=True, width=100)`. Covers every T030 bullet: column order, ordering (last_activity desc, company casefold, role), ≤ 100 columns with 80-char names, exact widths 4/28/30/12/10, `Unknown` for null role, all seven status labels with `no_color=True`, local date (`TZ=Asia/Kolkata` turns 23:30 UTC into the next day), Gmail thread link (checked in `export_html`), blank badge column, empty-store message, summary line. One extra test: the `Last activity` header wraps instead of being ellipsized.
+  - `src/applytrail/render.py`: `build_table(store) -> Table`, `render_table(store, console)`, `render_summary(counts, console)`, `sort_key`. `box.SQUARE`; Company/Role `max_width` with ellipsis; status is the enum label with a colour that only reinforces it. Badge column already reads `sync.added`/`sync.updated` (`NEW`/`UPD`) per T031; tests for the badges themselves belong to T037.
+  - `tasks.md`: T030, T031 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 400 passed. Rendered sample: every line exactly 100 columns with 80-char names.
+- Maker self-assessment (maker's own view, NOT a verdict): T030–T031 done. D3 not ready (T032–T033 remain).
+- Open questions / risks:
+  - Contract widths (4+28+30+12+10, plus padding and borders) total exactly 100, so the 13-char `Last activity` header cannot fit in 10 columns. Rich ellipsized it to `Last acti…`; the maker lets that column wrap, giving a two-line header (`Last` / `activity`). Alternative: shorten the header (e.g. `Last seen`), which changes the contract text.
+  - Status colours (`cyan`, `red`, ...) are the maker's choice; no spec lists them.
+  - `render_summary` always says `emails` (also for 1). The contract gives only the plural example.
+  - The link test relies on `Console.export_html` emitting `<a href>` for `link` styles (Rich 15.0.0).
+- Handoff: continue maker (D3 incomplete). Next: T032–T033 (CLI), the last D3 pair; then D5 (squash `us1-wip` into one `feat(us1): ...` commit).
