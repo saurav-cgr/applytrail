@@ -341,3 +341,28 @@ now ready for the checker.
 - Maker self-assessment (maker's own view, NOT a verdict): V008 addressed; D6 maker-ready again.
 - Open questions / risks: a stop during the search now records `read=0`, `pending=0` and empty badges, so the exit-4 table for a rate limit hit during the search shows no badges. This is intended.
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to re-grade D6 (commit `fae030f`).
+
+## Iteration 21 — 2026-10-14
+- Targeted criteria: D7 (US3), first increment: T038–T040. D6 is checker-pass (V009).
+- Worktree: `../applytrail-loop-iter-21` on new branch `us3-wip` (from `7d29a95`; removed after commit `48947ee`).
+- Change:
+  - Tests first, confirmed failing (8 failed: the old `--offline` stub exits 1). In `tests/unit/test_cli.py`, an `offline` fixture makes `GmailMcp`, `OllamaExtractor` and `socket.socket` raise, and sets `TZ=UTC`. The tests:
+    - stored `NEW`/`UPD` badges print with `Last sync: 2026-10-14 08:02 (complete)`, and the store bytes and mtime are unchanged with no save;
+    - incomplete with pending prints `(incomplete — 230 emails pending; run applytrail to continue)`;
+    - incomplete with nothing pending prints `(incomplete; run applytrail to continue)`;
+    - a missing store prints `No data yet. Run applytrail to sync.` on stderr, exits 0 and does not create the home folder;
+    - a never-synced empty store prints the same message;
+    - a synced store with no applications prints `No job applications found yet.` plus the last-sync line;
+    - an unreadable store exits 5 with the cli.md message and the file is untouched.
+  - `tests/unit/test_render_perf.py` (T040): 500 synthetic applications through `cli.main(["--offline"])` must take less than 2 s (SC-002). Measured 0.09 s.
+  - Added after the implementation, so not seen failing on the old code: `test_offline_imports_no_network_module`, which runs `--offline` in a fresh interpreter and asserts `applytrail.mcp_client`, `applytrail.extractor`, `applytrail.sync`, `mcp` and `googleapiclient` are not imported. A mutation check (top-level `import sync` in `cli.py`) makes it fail.
+  - `src/applytrail/cli.py`: `_offline_command` loads the store and never writes it. A never-synced store (no applications and no `last_sync_at`) prints the no-data message; otherwise it prints the table and `render_last_sync`. The network modules were already imported lazily (iteration 14).
+  - `src/applytrail/render.py`: `render_last_sync(sync, console)` prints the local time `%Y-%m-%d %H:%M` and the state, with soft wrap so the long line stays one line.
+  - `tasks.md`: T038–T040 checked.
+- Verification run by maker: ruff check and format pass; `uv run pytest` 460 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): US3 tasks done. D7 not ready: the single `feat(us3)` commit is still to do.
+- Open questions / risks:
+  - Decision: "empty store" means never synced (no applications and no `last_sync_at`). A store that synced but found no applications shows `No job applications found yet.` plus the last-sync line, not "No data yet. Run applytrail to sync.", because that advice would be wrong.
+  - The incomplete-with-nothing-pending wording is the maker's own; cli.md shows only the pending form.
+  - With no `last_sync_at` but some applications (should not happen), the table prints without a last-sync line.
+- Handoff: not ready for check yet. Next maker iteration: squash `us3-wip` into one `feat(us3): ...` commit (backup branch first), then D7 goes to the checker.
