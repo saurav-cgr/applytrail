@@ -380,3 +380,20 @@ now ready for the checker.
 - Open questions / risks: the iteration-21 decisions are still open for review. A synced store with no applications prints the table message plus the last-sync line, not "No data yet". The wording for an incomplete sync with nothing pending is the maker's own.
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D7 (commit `fa757fd`).
 - Human ruling (2026-10-14, after iteration 22): both iteration-21 decisions are accepted. A synced store with no applications shows `No job applications found yet.` plus the last-sync line. An incomplete sync with nothing pending shows `(incomplete; run applytrail to continue)`. `contracts/cli.md` is unchanged, so the US3 commit keeps its single-commit boundary.
+
+## Iteration 23 — 2026-10-14
+- Targeted criteria: D8 (Polish, T041–T043)
+- Worktree: `../applytrail-loop-iter-23` on temporary branch `polish-wip`, fast-forwarded into `001-gmail-sync-table`, then removed with the branch. The T042 draft was made in place, because it must stay uncommitted.
+- Change:
+  - Committed `16af966 docs(polish): add README and package readme metadata`: 3 files.
+  - `README.md` (T041): what it does, install (`uv tool install .` / `pipx install .`), Google OAuth setup (Desktop app client, `~/.applytrail/credentials.json`, `applytrail-auth`, `gmail.readonly` only), Ollama setup (`ollama pull qwen3:4b`, about 2.5 GB, about 3 GB RAM, unloaded after 5 min), usage (`applytrail`, `--offline`, `--version`), the environment variable table copied from `contracts/cli.md`, exit codes for all three commands, privacy (local model only, the `OLLAMA_HOST` caveat and warning, no bodies stored, what the store keeps, the files in `~/.applytrail` and their modes), and stand-alone MCP server use (MCP Inspector command, Claude Desktop config snippet). Facts were checked against `config.py`, `extractor.py` (`keep_alive: "5m"`, non-loopback warning), `models.Application` and `cli.py`.
+  - `pyproject.toml`: `readme = "README.md"`, which M-006 deferred to this task.
+  - `tasks.md`: T041, T042 and T043 checked. T044 stays open (human, D9).
+  - `.specify/memory/constitution.md` (T042): draft amendment 1.0.0 to 1.1.0, **uncommitted for user review**. It adds a Sync Impact Report and changes the Technical Constraints (Python ≥ 3.11; `mcp` 2.x `MCPServer`; local Ollama over stdlib `urllib` in place of `google-genai`; default `qwen3:4b`; 60 s target on the M1 Pro 16 GB reference laptop). It also changes Principle V (README states local extraction plus the `OLLAMA_HOST` caveat). Beyond the T042 list, it replaces the stale "missing API key" example in Principle VII with "Ollama not running". The templates in `.specify/templates/` have no stale references.
+- Verification run by maker in the worktree (T043): `uv run ruff check .` and `uv run ruff format --check .` pass; `uv run pytest` 460 passed; `grep -rn "google.genai\|import ollama" src/` is empty.
+- Maker self-assessment (maker's own view, NOT a verdict): D8 maker-ready, with one known exception below.
+- Open questions / risks:
+  - The D8 grep `grep -rn "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` is not empty. It matches `sender=_header(payload, "From")` (line 91), the required `EmailMeta.sender` field from `contracts/mcp-tools.md`. Iteration 3 already flagged this. The whole-word grep `grep -rnw "modify\|send\|trash\|batchDelete\|delete\|insert\|untrash\|batchModify" src/applytrail/gmail_client.py` is empty, and the only OAuth scope is `gmail.readonly`. The maker did not rename the field, because that would change the MCP contract. The checker or the human decides whether the criterion's intent is met.
+  - The constitution draft is unstaged in the main working copy. It must not be committed by the loop; the human reviews and commits it.
+  - The README states behaviour from `contracts/cli.md` and the code; the live Gmail and Ollama steps are untested until T044 (D9).
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D8 (commit `16af966`).
