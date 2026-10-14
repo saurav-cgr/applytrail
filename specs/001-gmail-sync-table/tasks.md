@@ -36,7 +36,7 @@ Single project, `src/` layout: package `src/applytrail/`, tests `tests/`, script
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create `pyproject.toml` at the repository root:
+- [x] T001 Create `pyproject.toml` at the repository root:
   - Build backend: hatchling. Package `applytrail` in `src/`.
   - `requires-python = ">=3.11"`.
   - Dependencies: `mcp>=2.3,<3`, `google-api-python-client`, `google-auth-oauthlib`,
@@ -46,16 +46,16 @@ Single project, `src/` layout: package `src/applytrail/`, tests `tests/`, script
     `applytrail-mcp = "applytrail.mcp_server:main"`.
   - Ruff config: `line-length = 100`, `target-version = "py311"`, rule sets `E,F,I,UP,B`.
   - Pytest config: `testpaths = ["tests"]`.
-- [ ] T002 Create the package and test skeleton:
+- [x] T002 Create the package and test skeleton:
   - `src/applytrail/__init__.py` defining `__version__ = "0.1.0"`.
   - Empty `tests/__init__.py`.
   - Folders: `tests/unit/`, `tests/contract/`, `tests/integration/`, `tests/fixtures/`,
     `tests/golden/`, `scripts/`.
   - Run `uv sync` and confirm `uv run pytest` passes with zero tests.
-- [ ] T003 [P] Extend `.gitignore` with `credentials.json`, `token.json`, `.env`,
+- [x] T003 [P] Extend `.gitignore` with `credentials.json`, `token.json`, `.env`,
   `applications.json`, `applications.json.tmp`, `debug.log`, `.venv/`, `__pycache__/`,
   `.pytest_cache/`, `.ruff_cache/`, `dist/` (constitution Principle V).
-- [ ] T004 [P] Align `specs/001-gmail-sync-table/spec.md` with the Ollama plan (plan.md
+- [x] T004 [P] Align `specs/001-gmail-sync-table/spec.md` with the Ollama plan (plan.md
   "Recommended follow-ups"):
   - Edge case "Extraction service key missing" becomes "Ollama not running or model not
     installed: one message naming the fix (`ollama serve` / `ollama pull <model>`), exit
@@ -77,7 +77,7 @@ needs these.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 [P] Implement `src/applytrail/errors.py`:
+- [x] T005 [P] Implement `src/applytrail/errors.py`:
   - Base `AppError(Exception)` with `exit_code: int` and `message: str`.
   - Subclasses, with messages copied exactly from `contracts/cli.md` "Exit codes and messages":
     - `AuthRequired` (2)
@@ -92,7 +92,7 @@ needs these.
   - `ExtractionInvalid(Exception)` is separate and not an `AppError`, because it causes a skip,
     not an exit.
   - Messages that include `pending` take the count as a constructor argument.
-- [ ] T006 [P] Implement `src/applytrail/config.py`: a frozen dataclass `Settings` built by
+- [x] T006 [P] Implement `src/applytrail/config.py`: a frozen dataclass `Settings` built by
   `Settings.from_env()`.
   - `home: Path`: from `APPLYTRAIL_HOME`, default `~/.applytrail`, expanded.
   - `model: str`: from `APPLYTRAIL_MODEL`, default `"qwen3:4b"`.
@@ -105,7 +105,7 @@ needs these.
     `SAVE_EVERY = 10`, `BODY_MAX_CHARS = 4000`.
   - Helper `is_loopback_host(url) -> bool`: true for `localhost`, `127.0.0.0/8`, and `::1`.
   - Helper `ensure_home(settings)`: creates the folder with mode `0o700`.
-- [ ] T007 [P] Write `tests/unit/test_models.py` covering every constraint in data-model.md:
+- [x] T007 [P] Write `tests/unit/test_models.py` covering every constraint in data-model.md:
   - `Status` values are exactly `applied, in_review, assessment, interview, offer, rejected,
     withdrawn`, with display labels `Applied, In Review, Assessment, Interview, Offer, Rejected,
     Withdrawn`.
@@ -121,7 +121,7 @@ needs these.
   - `SyncState.pending` is an int, 0 when complete.
   - All datetimes must be timezone-aware UTC; naive datetimes are rejected.
   - `Store.schema_version == 1`.
-- [ ] T008 Implement `src/applytrail/models.py` (Pydantic v2) so T007 passes. Models: `Status`
+- [x] T008 Implement `src/applytrail/models.py` (Pydantic v2) so T007 passes. Models: `Status`
   (str Enum with a `label` property), `Extraction`, `EmailMeta`, `Application`, `ProcessedEmail`,
   `RunCounts {read, added, updated, ignored, skipped}`, `SyncState`, `Store`.
   - `Store` fields: `schema_version: Literal[1]`, `applications: dict[str, Application]`,
@@ -130,7 +130,7 @@ needs these.
   - Field rules exactly as in data-model.md.
   - `Extraction.role` validator: trim, and convert empty to `None`.
   - `Extraction.company` validator: trim.
-- [ ] T009 [P] Write `tests/unit/test_normalize.py` (research R8):
+- [x] T009 [P] Write `tests/unit/test_normalize.py` (research R8):
   - `"Acme"`, `"ACME Inc."`, `"Acme Corporation"`, and `"Acme, Inc"` all give company key
     `"acme"`.
   - `"Johnson & Johnson"` gives `"johnson and johnson"`.
@@ -138,13 +138,13 @@ needs these.
   - A name that is only a suffix (`"Company"`) is not reduced to empty: keep the last word.
   - Role: `"  Backend Engineer. "` gives `"backend engineer"`; `None` and `""` give `""`.
   - `make_key("acme", "")` gives `"acme|"`.
-- [ ] T010 Implement `src/applytrail/normalize.py` so T009 passes:
+- [x] T010 Implement `src/applytrail/normalize.py` so T009 passes:
   - `norm_company(s)`: casefold; `&` becomes ` and `; strip punctuation to spaces; drop trailing
     legal suffixes from the R8 list (repeat until none are left, but never drop the last
     remaining word); collapse whitespace.
   - `norm_role(s | None)`: casefold, collapse whitespace, strip punctuation at both ends.
   - `make_key(ck, rk)`: returns `f"{ck}|{rk}"`.
-- [ ] T011 [P] Write `tests/unit/test_store.py` (contracts/store-schema.md, research R6):
+- [x] T011 [P] Write `tests/unit/test_store.py` (contracts/store-schema.md, research R6):
   - A missing file loads as `Store.empty()`.
   - Save, then load, round-trips.
   - The saved file has 2-space indent and sorted keys. Saving the same state twice is
@@ -155,7 +155,7 @@ needs these.
   - Invalid JSON, a validation failure, or an unknown `schema_version` raises `StoreUnreadable`,
     and the file bytes are unchanged afterwards.
   - The saved JSON never contains the key `body_text`.
-- [ ] T012 Implement `src/applytrail/store.py` so T011 passes:
+- [x] T012 Implement `src/applytrail/store.py` so T011 passes:
   - `load(path) -> Store`.
   - `save(store, path)`:
     - write to a tmp file in the same folder with `json.dumps(..., indent=2, sort_keys=True)`
@@ -164,7 +164,7 @@ needs these.
     - `os.chmod 0o600`;
     - `os.replace`.
   - Folder created with `0o700`.
-- [ ] T013 [P] Create anonymized email fixtures in `tests/fixtures/`. Each fixture is one JSON file
+- [x] T013 [P] Create anonymized email fixtures in `tests/fixtures/`. Each fixture is one JSON file
   in `EmailMeta` shape (`message_id`, `thread_id`, `date`, `sender`, `subject`, `body_text`), plus
   `expected` (an Extraction-like dict) for fake extractors:
   - `confirm_acme_backend.json` (applied)
@@ -178,7 +178,7 @@ needs these.
   - `html_only_body.json`, with a raw Gmail payload of a `text/html` part, for gmail_client tests
   - `delayed_old_email.json` (dated before the Acme rejection)
   - Use only made-up companies, people, and addresses.
-- [ ] T014 [P] Create test doubles in `tests/fakes.py`:
+- [x] T014 [P] Create test doubles in `tests/fakes.py`:
   - `FakeMcpClient` with methods `search_job_emails(after, page_token=None)` and
     `get_email(message_id)`, backed by a list of fixture dicts. It records every call, and can be
     set to raise a configured `AppError` on the Nth call.

@@ -1,0 +1,15 @@
+{
+  "message_id": "msg-acme-002",
+  "thread_id": "thread-acme-backend",
+  "date": "2026-10-03T10:00:00Z",
+  "sender": "ACME Corporation Hiring <jobs@acme-careers.example>",
+  "subject": "Update on your Backend Engineer application",
+  "body_text": "Hello Alex,\n\nYour application for Backend Engineer at ACME Corporation is now under review by the hiring manager.\n\nRegards,\nACME Corporation",
+  "expected": {
+    "is_job_application": true,
+    "company": "ACME Corporation",
+    "role": "Backend Engineer",
+    "status": "in_review",
+    "evidence": "Your application ... is now under review"
+  }
+}

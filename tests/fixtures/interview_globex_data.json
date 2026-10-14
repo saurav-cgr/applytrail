@@ -1,0 +1,15 @@
+{
+  "message_id": "msg-globex-001",
+  "thread_id": "thread-msg-globex-001",
+  "date": "2026-10-05T09:30:00Z",
+  "sender": "Jordan Lee <jordan.lee@globex.example>",
+  "subject": "Interview invitation - Data Engineer",
+  "body_text": "Hi Alex,\n\nWe'd like to invite you to a technical interview for the Data Engineer position at Globex. Please pick a slot using the scheduling link in our portal.\n\nJordan",
+  "expected": {
+    "is_job_application": true,
+    "company": "Globex",
+    "role": "Data Engineer",
+    "status": "interview",
+    "evidence": "We'd like to invite you to a technical interview"
+  }
+}

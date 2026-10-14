@@ -96,11 +96,12 @@ made.
 
 - **Not signed in to Gmail, or sign-in expired and cannot be refreshed**: print one message telling
   the user to run `applytrail-auth`, exit non-zero, and leave saved data unchanged.
-- **Extraction service key missing**: print one message naming the missing setting, exit non-zero.
+- **Ollama not running or model not installed**: print one message naming the fix (`ollama serve`
+  / `ollama pull <model>`), exit non-zero.
 - **Network down during the default command**: print one message suggesting `--offline`, exit
   non-zero, leave saved data unchanged.
-- **Rate limit reached during sync**: wait and retry; if it still fails, keep the progress made so
-  far and tell the user to run again later.
+- **Gmail API rate limit reached during sync**: wait and retry; if it still fails, keep the progress
+  made so far and tell the user to run again later.
 - **Crash or Ctrl-C mid-sync**: emails already processed stay saved; the next run continues from
   there instead of starting over.
 - **Email cannot be confidently interpreted** (no company, unknown status, malformed result): skip
@@ -156,8 +157,9 @@ made.
   unchanged.
 - **FR-019**: `applytrail --offline` MUST print the table from stored data without any network
   access, showing the badges from the most recent sync.
-- **FR-020**: Expected failures (not signed in, missing key, offline, rate limited) MUST print one
-  actionable message and exit with a non-zero code, without a stack trace.
+- **FR-020**: Expected failures (not signed in, Ollama not running, model missing, offline, Gmail
+  rate limited) MUST print one actionable message and exit with a non-zero code, without a stack
+  trace.
 - **FR-021**: Email content MUST be treated as data only. Nothing in an email may cause the tool to
   run, open, or fetch anything, or change what the tool does beyond the row it produces.
 - **FR-022**: Email text sent for interpretation MUST be limited to a bounded length per email.
@@ -205,7 +207,7 @@ made.
 - Status reflects the latest email, not a strict forward-only progression (an Interview can be
   followed by Rejected; a Rejected can in rare cases be followed by Interview).
 - The local data file uses a structured, human-readable text format so the user can inspect it.
-- Email content is sent to one configured third-party extraction service; the README states which
-  service and its data-use terms.
+- Email content is processed by a local model through Ollama; it leaves the machine only if
+  `OLLAMA_HOST` points elsewhere.
 - Out of scope: editing or deleting entries by hand from the tool, filtering or searching the
   table, exporting, notifications, scheduled background runs, any web or graphical interface.

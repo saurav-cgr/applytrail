@@ -1,0 +1,15 @@
+{
+  "message_id": "msg-alert-001",
+  "thread_id": "thread-msg-alert-001",
+  "date": "2026-10-07T07:30:00Z",
+  "sender": "JobBoard Alerts <alerts@jobboard.example>",
+  "subject": "10 new Backend Engineer jobs for you",
+  "body_text": "New jobs matching your search: Backend Engineer at Umbrella Labs, Backend Engineer at Hooli, Platform Engineer at Vandelay Industries. Apply now!",
+  "expected": {
+    "is_job_application": false,
+    "company": "",
+    "role": null,
+    "status": "unknown",
+    "evidence": ""
+  }
+}

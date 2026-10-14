@@ -1,0 +1,42 @@
+[project]
+name = "applytrail"
+version = "0.1.0"
+description = "Track job applications from Gmail in a terminal table, using a local Ollama model."
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.3,<3",
+    "google-api-python-client",
+    "google-auth-oauthlib",
+    "pydantic>=2",
+    "rich",
+    "python-dotenv",
+]
+
+[project.scripts]
+applytrail = "applytrail.cli:main"
+applytrail-auth = "applytrail.gmail_auth:main"
+applytrail-mcp = "applytrail.mcp_server:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/applytrail"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".specify", "specs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

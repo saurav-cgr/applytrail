@@ -1,0 +1,46 @@
+{
+  "message_id": "msg-umbrella-001",
+  "thread_id": "thread-msg-umbrella-001",
+  "date": "2026-10-10T10:00:00Z",
+  "sender": "Umbrella Labs <jobs@umbrella-labs.example>",
+  "subject": "We received your application",
+  "body_text": "Hi Alex, Thank you for applying for the Product Designer role at Umbrella Labs. We received your application.",
+  "expected": {
+    "is_job_application": true,
+    "company": "Umbrella Labs",
+    "role": "Product Designer",
+    "status": "applied",
+    "evidence": "We received your application"
+  },
+  "gmail_raw": {
+    "id": "msg-umbrella-001",
+    "threadId": "thread-msg-umbrella-001",
+    "internalDate": "1791626400000",
+    "payload": {
+      "mimeType": "multipart/alternative",
+      "headers": [
+        {
+          "name": "From",
+          "value": "Umbrella Labs <jobs@umbrella-labs.example>"
+        },
+        {
+          "name": "Subject",
+          "value": "We received your application"
+        },
+        {
+          "name": "Date",
+          "value": "Fri, 10 Oct 2026 10:00:00 +0000"
+        }
+      ],
+      "parts": [
+        {
+          "mimeType": "text/html",
+          "body": {
+            "size": 222,
+            "data": "PGh0bWw-PGhlYWQ-PHN0eWxlPnB7Y29sb3I6cmVkfTwvc3R5bGU-PHNjcmlwdD5hbGVydCgneCcpPC9zY3JpcHQ-PC9oZWFkPjxib2R5PjxwPkhpIEFsZXgsPC9wPjxwPlRoYW5rIHlvdSBmb3IgYXBwbHlpbmcgZm9yIHRoZSA8Yj5Qcm9kdWN0IERlc2lnbmVyPC9iPiByb2xlIGF0IFVtYnJlbGxhIExhYnMuIFdlIHJlY2VpdmVkIHlvdXIgYXBwbGljYXRpb24uPC9wPjwvYm9keT48L2h0bWw-"
+          }
+        }
+      ]
+    }
+  }
+}
