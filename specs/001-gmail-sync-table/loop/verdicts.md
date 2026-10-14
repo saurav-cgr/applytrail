@@ -13,6 +13,7 @@ source (a run, a file, an endpoint), not the maker's self-assessment.
 | V006 | 15 | D3 | Clean detached worktree at us1-wip 865e255; independent full pytest 428 passed, Ruff lint/format passed, US1 tasks checked; literal-role, exception-chain/notes privacy and real malformed .env probes passed | pass | high | 2026-10-14 |
 | V007 | 16 | D5 | Exact commit d3fa14b in clean detached worktree: 428 pytest tests passed, Ruff lint/format passed; git history has exactly one feat(us1) commit; full non-loop tree matches reviewed 865e255; task and changed-path audit passed | pass | high | 2026-10-14 |
 | V008 | 19 | D6 | Clean detached worktree at 7ebc719: required 66 tests and full 449 tests pass, Ruff passes; single US2 commit and task audit pass; independent search-failure probes retain stale badges and count prior additions in latest run, violating T036/data-model | fail | high | 2026-10-14 |
+| V009 | 20 | D6 | Clean detached worktree at fae030f: required 68 tests and full 451 tests pass, Ruff passes; single US2 commit/task audit; nine independent search, pagination and progress stop probes plus save/load/render and unchanged repeat pass | pass | high | 2026-10-14 |
 
 ## Iteration 2 independent check — 2026-10-14
 
@@ -342,3 +343,46 @@ The loop is not done.
 Live Gmail/Ollama, real-mail accuracy and minimum-Python execution were not
 checked. Accepted extraction injection risk and the planned constitution/provider
 amendment remain outstanding.
+
+
+## Iteration 20 independent check — 2026-10-14
+
+The checker did not produce the maker's implementation or iteration 20. D6 is
+the only maker-ready criterion; one independent vote is required. Verification
+ran in a clean detached worktree at replacement US2 commit `fae030f`.
+
+### D6: pass (high confidence)
+
+- Full pytest: 451 passed in 6.92 seconds on Python 3.14.7. Required
+  merge/incremental-sync/render suites: 68 passed in 0.19 seconds. Ruff lint and
+  format checks passed (41 files).
+- Source inspection confirms the start snapshot and both badge resets precede
+  search and the initial progress callback, satisfying T036 and SyncState's
+  every-run reset rule. Compared with V008's `7ebc719`, implementation changes
+  are limited to moving this initialization; the conflicting preservation test
+  is replaced with three failure regressions.
+- Independent probes seeded both previous badge lists, then raised each of
+  NetworkUnavailable, GmailRateLimited and KeyboardInterrupt at first search,
+  second search page and initial progress (nine combinations). Every stop cleared
+  both lists, recorded zero read/added/updated counts, preserved applications,
+  processed IDs and checkpoint, and recorded pending=0 for search failure or
+  pending=1 after successful search. Explicit real store save/load and rendering
+  at 100 columns without color showed no stale NEW/UPD badges. These probes did
+  not execute the CLI or call live services.
+- An independent successful repeat of the same fixture confirmed zero
+  read/added/updated counts, empty badge lists and unchanged applications.
+- Feature history contains exactly one `feat(us2):` commit, `fae030f`, with seven
+  files confined to US2 and T034–T037 checked. Changes from that commit to the
+  feature tip affect only loop records. The rewritten story fixes V008 while
+  preserving the single-story commit boundary. V008 remains historical evidence
+  against its named original commit, not a claim about the replacement.
+
+No failures, uncertain criteria or new debt. D6 is checker-pass; phase is checked.
+Implementation and iterations.md were not edited. D1–D3/D5 retain prior passes;
+D4 retains its human-accepted DEBT-001 deviation. D7–D9 remain pending and were
+not graded. Continue `/speckit.loop.run` for US3 (D7); passing D6 does not close
+the loop. Closure still requires remaining criteria and `/speckit.loop.guard`
+with human sign-off.
+
+Live Gmail/Ollama and minimum-Python execution were not checked. Accepted
+extraction injection risk and the planned constitution/provider amendment remain.
