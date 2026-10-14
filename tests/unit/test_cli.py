@@ -406,3 +406,176 @@ def test_ctrl_c_during_preflight_exits_130_without_traceback(harness, capsys):
     _, err = capsys.readouterr()
     assert_one_line(err, "Interrupted. Progress saved.")
     assert harness.gmail_settings == []
+
+
+# --- --offline (US3) ------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def offline(harness, monkeypatch):
+    """No Gmail client, no model, no socket: any attempt fails the test."""
+    import socket
+    import time
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("--offline must not touch the network")
+
+    monkeypatch.setattr(mcp_client, "GmailMcp", forbidden)
+    monkeypatch.setattr(extractor, "OllamaExtractor", forbidden)
+    monkeypatch.setattr(socket, "socket", forbidden)
+    monkeypatch.setenv("TZ", "UTC")
+    time.tzset()
+    yield harness
+    monkeypatch.undo()
+    time.tzset()
+
+
+def write_store(settings, data: Store) -> bytes:
+    settings.home.mkdir(parents=True, exist_ok=True)
+    raw = (json.dumps(data.model_dump(mode="json"), indent=2, sort_keys=True) + "\n").encode()
+    settings.store_path.write_bytes(raw)
+    return raw
+
+
+def synced_store(**sync_fields) -> Store:
+    when = datetime(2026, 10, 12, 14, 3, tzinfo=UTC)
+    acme = Application(
+        key="acme|backend engineer",
+        company="Acme Inc.",
+        role="Backend Engineer",
+        status="rejected",
+        last_activity=when,
+        first_seen=when,
+        thread_id="thr-acme",
+        subject="Your application",
+        evidence="not moving forward",
+        message_ids=["msg-acme-004"],
+    )
+    globex = acme.model_copy(
+        update={"key": "globex|data analyst", "company": "Globex", "role": "Data Analyst"}
+    )
+    data = Store.empty()
+    data.applications = {acme.key: acme, globex.key: globex}
+    data.sync.added = [globex.key]
+    data.sync.updated = [acme.key]
+    data.sync.last_sync_at = datetime(2026, 10, 14, 8, 2, 30, tzinfo=UTC)
+    data.sync.checkpoint = when
+    data.sync.last_sync_complete = True
+    data.sync.stop_reason = "complete"
+    for name, value in sync_fields.items():
+        setattr(data.sync, name, value)
+    return data
+
+
+def test_offline_prints_stored_table_and_last_sync(offline, capsys):
+    path = offline.settings.store_path
+    raw = write_store(offline.settings, synced_store())
+    mtime = path.stat().st_mtime_ns
+
+    assert cli.main(["--offline"]) == 0
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert "NEW" in out and "Globex" in out
+    assert "UPD" in out and "Acme Inc." in out
+    assert out.rstrip().splitlines()[-1] == "Last sync: 2026-10-14 08:02 (complete)"
+    assert path.read_bytes() == raw
+    assert path.stat().st_mtime_ns == mtime
+    assert "save" not in offline.events
+
+
+def test_offline_incomplete_sync_shows_pending(offline, capsys):
+    data = synced_store(last_sync_complete=False, stop_reason="provider_unavailable", pending=230)
+    write_store(offline.settings, data)
+
+    assert cli.main(["--offline"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.rstrip().splitlines()[-1] == (
+        "Last sync: 2026-10-14 08:02 (incomplete — 230 emails pending; run applytrail to continue)"
+    )
+
+
+def test_offline_incomplete_sync_with_nothing_pending(offline, capsys):
+    write_store(offline.settings, synced_store(last_sync_complete=False, stop_reason="network"))
+
+    assert cli.main(["--offline"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.rstrip().splitlines()[-1] == (
+        "Last sync: 2026-10-14 08:02 (incomplete; run applytrail to continue)"
+    )
+
+
+def test_offline_missing_store_says_no_data(offline, capsys):
+    assert cli.main(["--offline"]) == 0
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert not offline.settings.store_path.exists()
+    assert not offline.settings.home.exists()
+
+
+def test_offline_never_synced_empty_store_says_no_data(offline, capsys):
+    raw = write_existing_store(offline.settings)
+
+    assert cli.main(["--offline"]) == 0
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_offline_synced_store_without_applications_shows_last_sync(offline, capsys):
+    data = synced_store()
+    data.applications = {}
+    data.sync.added = data.sync.updated = []
+    write_store(offline.settings, data)
+
+    assert cli.main(["--offline"]) == 0
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == [
+        "No job applications found yet.",
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+
+
+def test_offline_unreadable_store_exits_5(offline, capsys):
+    offline.settings.home.mkdir(parents=True)
+    offline.settings.store_path.write_text("{not json", encoding="utf-8")
+
+    assert cli.main(["--offline"]) == 5
+
+    _, err = capsys.readouterr()
+    assert_one_line(
+        err,
+        f"Cannot read {offline.settings.store_path}. Move it aside and run applytrail to rebuild.",
+    )
+    assert offline.settings.store_path.read_text(encoding="utf-8") == "{not json"
+
+
+def test_offline_imports_no_network_module(tmp_path):
+    # A fresh interpreter, because this test process has already imported every module.
+    import os
+    import subprocess
+    import sys
+
+    script = (
+        "import sys\n"
+        "from applytrail import cli\n"
+        "assert cli.main(['--offline']) == 0\n"
+        "loaded = [m for m in ('applytrail.mcp_client', 'applytrail.extractor', "
+        "'applytrail.sync', 'mcp', 'googleapiclient') if m in sys.modules]\n"
+        "print(loaded)\n"
+    )
+    env = {**os.environ, "APPLYTRAIL_HOME": str(tmp_path / "home")}
+    result = subprocess.run(
+        [sys.executable, "-c", script], cwd=tmp_path, env=env, capture_output=True, text=True
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "[]\n"

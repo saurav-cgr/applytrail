@@ -16,6 +16,7 @@ from applytrail import __version__, render, store
 from applytrail.config import Settings, ensure_home
 from applytrail.errors import AppError, Interrupted
 
+NO_DATA_MESSAGE = "No data yet. Run applytrail to sync."
 SECONDS_PER_EMAIL = 3
 ESTIMATE_THRESHOLD = 50
 
@@ -47,9 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     err = Console(stderr=True)
     try:
         if args.offline:
-            # Implemented with US3 (T039).
-            _message("--offline is not available yet.")
-            return 1
+            return _offline_command(settings, out)
         return _sync_command(settings, out, err)
     except AppError as error:
         _message(error.message)
@@ -60,6 +59,17 @@ def main(argv: list[str] | None = None) -> int:
         return Interrupted.exit_code
     except Exception:
         return _unexpected(settings)
+
+
+def _offline_command(settings: Settings, out: Console) -> int:
+    """Print the saved table and last-sync line; reads the store only, writes nothing."""
+    data = store.load(settings.store_path)
+    if not data.applications and data.sync.last_sync_at is None:
+        _message(NO_DATA_MESSAGE)
+        return 0
+    render.render_table(data, out)
+    render.render_last_sync(data.sync, out)
+    return 0
 
 
 def _sync_command(settings: Settings, out: Console, err: Console) -> int:

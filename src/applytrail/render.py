@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from applytrail.models import Application, RunCounts, Status, Store
+from applytrail.models import Application, RunCounts, Status, Store, SyncState
 
 GMAIL_THREAD_URL = "https://mail.google.com/mail/u/0/#all/{thread_id}"
 EMPTY_MESSAGE = "No job applications found yet."
@@ -64,3 +64,17 @@ def render_summary(counts: RunCounts, console: Console) -> None:
         f"{counts.ignored} ignored · {counts.skipped} skipped",
         highlight=False,
     )
+
+
+def render_last_sync(sync: SyncState, console: Console) -> None:
+    """`--offline` footer: when the latest sync ran and whether it finished."""
+    if sync.last_sync_at is None:
+        return
+    when = sync.last_sync_at.astimezone().strftime("%Y-%m-%d %H:%M")
+    if sync.last_sync_complete:
+        state = "complete"
+    elif sync.pending:
+        state = f"incomplete — {sync.pending} emails pending; run applytrail to continue"
+    else:
+        state = "incomplete; run applytrail to continue"
+    console.print(f"Last sync: {when} ({state})", highlight=False, soft_wrap=True)

@@ -477,7 +477,7 @@ Ollama call.
 same table and badges print, plus a `Last sync:` line. Exit 0. With no store: one message, exit 0
 (spec US3 scenarios 1–2).
 
-- [ ] T038 [P] [US3] Extend `tests/unit/test_cli.py` for `--offline`:
+- [x] T038 [P] [US3] Extend `tests/unit/test_cli.py` for `--offline`:
   - `GmailMcp` and `OllamaExtractor` are never constructed (patch them to raise if called), and
     no socket is opened (monkeypatch `socket.socket` to raise).
   - The table shows the stored badges, and the store file is unchanged (mtime and bytes).
@@ -487,11 +487,11 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
       continue)`.
   - Missing or empty store: `No data yet. Run applytrail to sync.` on stderr, exit 0.
   - An unreadable store gives exit 5 with the cli.md message.
-- [ ] T039 [US3] Implement the `--offline` branch in `src/applytrail/cli.py` and
+- [x] T039 [US3] Implement the `--offline` branch in `src/applytrail/cli.py` and
   `render_last_sync(sync, console)` in `src/applytrail/render.py` so T038 passes. Only
   `config`, `store`, and `render` are touched. No network module is imported on this path:
   import `mcp_client`, `extractor`, and `sync` lazily inside the default-command branch.
-- [ ] T040 [P] [US3] Add a performance test in `tests/unit/test_render_perf.py`: render a store of
+- [x] T040 [P] [US3] Add a performance test in `tests/unit/test_render_perf.py`: render a store of
   500 synthetic applications through `cli.main(["--offline"])` and assert < 2 s (SC-002).
 
 **Checkpoint**: All three user stories work independently.
