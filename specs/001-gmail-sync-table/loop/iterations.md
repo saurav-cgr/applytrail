@@ -64,3 +64,20 @@ now ready for the checker.
   - `save` now reads and validates the existing file on every save (every 10 emails). Fine for a few thousand entries; revisit only if T040 perf shows it.
   - A save over an invalid in-memory store raises `pydantic.ValidationError` (programming error), not an `AppError`.
 - Handoff: ready-for-check
+
+## Iteration 4 — 2026-10-14
+- Targeted criteria: D3 (partial: T016–T017 test+implementation pair)
+- Worktree: `../applytrail-loop-iter-4` on persistent branch `us1-wip` (see M-009); worktree removed after commit, branch kept. Not on the feature branch yet.
+- Change (commit `31a8da3 wip(us1): gmail client search and fetch (T016-T017)` on `us1-wip`):
+  - Tests first, confirmed failing at collection (`ImportError` for `gmail_client`, `MessageRef`): `tests/unit/test_gmail_client.py` (fake `service` with only `list`/`get`; query parts, epoch `after:`, ATS domains, OR group; per-page ascending sort and `nextPageToken`; metadata-only `get` in search; plain over HTML, nested parts, HTML fixture without script/style, entities and block tags, whitespace collapse, truncation at and over `max_chars`; Date header, `-0000`/missing/garbage falling back to `internalDate`; 429/5xx/403/DNS/reset/timeout/`ServerNotFoundError` mapping). `tests/unit/test_models.py`: `EmailMeta.truncated`, `SearchPage`, `MessageRef`.
+  - `src/applytrail/models.py`: `EmailMeta.truncated: bool = False` (contract output has it; data-model.md does not list it), new `MessageRef` and `SearchPage` (the typed shape T020 needs).
+  - `src/applytrail/gmail_client.py`: `SEARCH_QUERY_TEMPLATE` (Gmail `{...}` OR group of job terms and `from:` ATS domains), `build_query`, `build_service`, `search` (one page per call; caller passes `page_token`), `get_email`, stdlib `HTMLParser` text extraction, `_mapped_errors` context manager. `execute(num_retries=2)` gives the "after server-side retry" behaviour for 429.
+  - `tasks.md`: T016, T017 checked.
+- Verification run by maker: `uv run ruff check . && uv run ruff format --check .` pass; `uv run pytest` 163 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T016–T017 done. D3 not ready (T015, T018–T024, T026–T027 remain; T028+ blocked on D4).
+- Open questions / risks:
+  - D8 check `grep -rn "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` matches `sender=` (line 91), a required `EmailMeta` field. The grep as written can never be empty; suggest `\bsend\b`. Contract change is for the human, not the maker.
+  - Network mapping catches `OSError`, `httplib2.HttpLib2Error` and `google.auth.exceptions.TransportError`. `httplib2` is a transitive dependency of `google-api-python-client`, imported directly but not declared.
+  - The job-term list in the query is a judgement call (R4 names no terms); the golden set (T023) should include phrasings it might miss.
+  - `-0000` Date headers (no zone info) fall back to `internalDate` instead of being read as UTC.
+- Handoff: continue maker (D3 incomplete); checker may review the `us1-wip` work early.

@@ -20,7 +20,7 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 
 ## Budget
 - Max iterations: 50
-- Iterations run: 3
+- Iterations run: 4
 - Isolation: worktree
 - Per-iteration scope: one phase, or one test+implementation task pair, per iteration. Never span two user stories in one iteration.
 
@@ -52,5 +52,5 @@ Statuses: pending → maker-ready → checker-pass | checker-fail → human-sign
 - Do not start T028+ until D4 is human-signed (tasks.md T025).
 
 ## State
-- Phase: checked
+- Phase: maker-ready
 - Last updated: 2026-10-14
