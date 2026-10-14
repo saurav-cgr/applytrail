@@ -114,6 +114,38 @@ npx @modelcontextprotocol/inspector uv run applytrail-mcp
 
 Expected: exactly two tools, `search_job_emails` and `get_email`; both callable; no write tools.
 
+Without Node, use the FastMCP CLI that ships with the `fastmcp` dependency:
+
+```bash
+uv run fastmcp list --command "uv run applytrail-mcp" --input-schema --output-schema
+```
+
+Expected: the same two tools. Input schemas match [contracts/mcp-tools.md](contracts/mcp-tools.md)
+(`after` required, `max_results` 1–500, `max_chars` 500–20000). Output schemas list the
+`SearchPage` and `EmailMeta` fields.
+
+## Scenario 7 — FastMCP migration parity
+
+Run after replacing `MCPServer` with `FastMCP` (research R1).
+
+```bash
+uv run pytest tests/contract tests/unit/test_mcp_client.py tests/integration -q
+uv run ruff check . && uv run ruff format --check .
+uv run python -c "import importlib.metadata as m; print(m.version('fastmcp'), m.version('mcp'))"
+APPLYTRAIL_HOME=$(mktemp -d) uv run fastmcp call --command "uv run applytrail-mcp" \
+  --target search_job_emails --input-json '{"after": "2026-04-15T00:00:00Z"}'
+```
+
+Expected:
+
+- All tests pass with no change to the asserted wire contract: tool names, schemas,
+  `structured_content`, and error texts.
+- `fastmcp` 4.x and `mcp` 2.3.x are installed.
+- The last command (empty home, so no token) prints
+  `Error: AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth.` and exits 1.
+  The server's log lines (stderr) are allowed; a FastMCP banner is not.
+- `applytrail` (full sync) and `applytrail --offline` behave exactly as in Scenarios 1–4.
+
 ## Golden-set evaluation (manual, when prompt/schema/model changes)
 
 ```bash

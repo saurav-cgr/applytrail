@@ -544,6 +544,118 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
 
 ---
 
+## Phase 7: FastMCP Migration (revision 2026-10-14)
+
+**Purpose**: Replace direct use of the `mcp` 2.x SDK (`MCPServer`, `mcp.Client`,
+`StdioServerParameters`) with the standalone `fastmcp` package. The wire contract stays the same:
+tool names, input and output schemas, `structured_content`, and error texts
+(plan.md "FastMCP migration scope", research.md R1, contracts/mcp-tools.md).
+
+**Independent Test**: The existing contract and client tests pass with only import and call-site
+changes, and none of their assertions change. Quickstart Scenarios 6 and 7 pass.
+
+**Verified facts (fastmcp 4.1.0, scratch venv)** that the tasks rely on:
+- `ToolError("X: …")` reaches the client as `is_error=True` with exactly the text `X: …`.
+- Other exceptions become `Error calling tool '<name>'` when `mask_error_details=True`.
+- `fastmcp.Client.call_tool` raises `ToolError` by default; pass `raise_on_error=False` to get
+  the result instead.
+- `Client.list_tools()` returns a `list`, not an object with a `.tools` attribute.
+- `StdioTransport(command, args, env)` exposes `.command`, `.args`, `.env`.
+- A Pydantic return annotation produces the output schema and `structured_content`.
+
+### Dependency
+
+- [ ] T045 Update `pyproject.toml`: replace `"mcp>=2.3,<3"` with `"fastmcp>=4.1,<5"`. Run `uv lock`
+  and `uv sync`. Confirm with `uv run python -c "import importlib.metadata as m;
+  print(m.version('fastmcp'), m.version('mcp'))"` that `fastmcp` is 4.x and `mcp` is 2.3.x (now
+  pulled in transitively). Keep `requires-python = ">=3.11"`.
+
+### Tests first (update the call sites; the assertions stay the same)
+
+- [ ] T046 [P] [US1] Update `tests/contract/test_mcp_tools.py` to use FastMCP:
+  - Imports: `from fastmcp import Client` and `from fastmcp.client.transports import
+    StdioTransport`. Remove the `mcp` imports.
+  - Update the module docstring to say `fastmcp.Client`.
+  - `call()`: `client.call_tool(name, arguments, raise_on_error=False)`, so error results are
+    returned rather than raised.
+  - `tools()`: `{tool.name: tool for tool in run(lambda client: client.list_tools())}`. There is
+    no `.tools` attribute any more.
+  - Keep reading schemas through `input_schema`/`output_schema`. The camelCase names are
+    deprecated.
+  - `test_stdio_server_without_token_reports_auth_required`: build
+    `StdioTransport(command=sys.executable, args=["-m", "applytrail.mcp_server"],
+    env={**os.environ, "APPLYTRAIL_HOME": ...})`. Use `(await client.list_tools())` directly and
+    `call_tool(..., raise_on_error=False)`.
+  - Do not change any expected value: tool names, schema bounds (`after` required,
+    `max_results` 1–500 default 500, `max_chars` 500–20000 default 4000), `structured_content`
+    shapes, or error texts (`AUTH_REQUIRED: Gmail access not set up or expired. Run
+    applytrail-auth.`, `NETWORK:`, `RATE_LIMITED:`, `GMAIL_ERROR:`).
+  - Add one test: an unexpected server exception gives `is_error=True`, and its text contains no
+    exception detail.
+  - Run the file. It must fail until T048 is done, because the server is still `MCPServer`.
+- [ ] T047 [P] [US1] Update `tests/unit/test_mcp_client.py`:
+  - `test_spawn_parameters` asserts on the `StdioTransport` returned by
+    `GmailMcp(settings).server_parameters()`: `.command == sys.executable`, `.args == ["-m", "applytrail.mcp_server"]`,
+    `.env["APPLYTRAIL_HOME"]`, `.env["PATH"]`.
+  - `test_unexpected_server_failure_is_a_gmail_error` must still raise `GmailError`. Under
+    FastMCP, the masked text `Error calling tool 'get_email'` reaches `_error_from_text` and falls
+    through to `GmailError("unknown")`.
+  - All other tests are unchanged.
+
+### Implementation
+
+- [ ] T048 [US1] Rewrite `src/applytrail/mcp_server.py` on FastMCP so T046 passes:
+  - `from fastmcp import FastMCP` and `from fastmcp.exceptions import ToolError`. Remove the
+    `mcp.server.mcpserver` and `mcp.types` imports.
+  - `server = FastMCP("applytrail-gmail", mask_error_details=True)`.
+  - `@server.tool` on `search_job_emails(...) -> SearchPage` and on
+    `get_email(...) -> EmailMeta`. Keep the parameters, the `Annotated[..., Field(...)]`
+    constraints, the defaults, and the docstrings word for word.
+  - `_call(produce)` returns the model. It catches `AuthRequired`, `NetworkUnavailable`,
+    `GmailRateLimited`, and `GmailError` and raises `ToolError` with the same texts as today:
+    `AUTH_REQUIRED_TEXT`, `f"NETWORK: {err.message}"`, `"RATE_LIMITED: Gmail rate limit reached."`,
+    and `f"GMAIL_ERROR: HTTP {err.status}"`. Keep the `logging` info line on failure.
+  - Delete `_error` and the manual `CallToolResult`/`TextContent` construction. Replace the
+    docstring that explains the SDK prefix workaround with one line saying FastMCP passes
+    `ToolError` text through verbatim.
+  - `main()`: logging to stderr as today, then `server.run("stdio", show_banner=False)`. Nothing
+    may be written to stdout outside the protocol (Principle VI).
+- [ ] T049 [US1] Update `src/applytrail/mcp_client.py` for `fastmcp.Client` so T047 passes:
+  - Imports: `from fastmcp import Client`, `from fastmcp.client.transports import
+    StdioTransport`, and `from fastmcp.client.client import CallToolResult` (verified path in 4.1.0). Remove the `mcp` imports.
+  - `server_parameters() -> StdioTransport` with the same `command`, `args`, and `env` as
+    today. Keep the comment explaining why the full environment is passed.
+  - `__enter__`: `Client(self._server if self._server is not None else
+    self.server_parameters())` inside the existing blocking portal.
+  - `_call`: `self._portal.call(partial(self._client.call_tool, name, arguments,
+    raise_on_error=False))`. The `is_error` → `_error_from_text` path is unchanged.
+  - Keep `_text` and `_error_from_text` as they are. Update the module docstring:
+    `fastmcp.Client` (async-only) runs in an anyio blocking portal.
+- [ ] T050 [US1] Run `uv run pytest tests/contract tests/unit/test_mcp_client.py tests/integration -q`
+  and `uv run pytest`. Everything must pass with no assertion changed outside T046 and T047.
+  Confirm with `grep -rn "from mcp\b\|import mcp\b\|MCPServer\|StdioServerParameters" src tests`
+  that nothing is left.
+
+### Docs and governance
+
+- [ ] T051 [P] Update `AGENTS.md` line 19: dependencies `fastmcp` 4.x (`FastMCP` server,
+  `fastmcp.Client` + `StdioTransport`; `mcp` 2.x protocol layer).
+- [ ] T052 [P] Update `README.md` "Using the MCP server on its own": add
+  `fastmcp list --command "applytrail-mcp"` as an inspector option that needs no Node. Keep the
+  MCP Inspector and Claude Desktop snippets.
+- [ ] T053 [P] Draft a PATCH constitution amendment in `.specify/memory/constitution.md`:
+  - Technical Constraints "`mcp` 2.x (`MCPServer` and stdio client)" becomes "`fastmcp` 4.x
+    (`FastMCP` server and client; `mcp` 2.x protocol layer)".
+  - Bump the patch version and update the Sync Impact Report.
+  - **Leave it uncommitted for user review.**
+- [ ] T054 Run `uv run ruff check . && uv run ruff format --check . && uv run pytest`, then
+  quickstart Scenarios 6 and 7 (`specs/001-gmail-sync-table/quickstart.md`):
+  - `fastmcp list` shows the two tools with the documented schemas.
+  - `fastmcp call` with an empty `APPLYTRAIL_HOME` prints the `AUTH_REQUIRED` error with no banner.
+  - `applytrail` and `applytrail --offline` behave as before on a real mailbox.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -556,6 +668,8 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
 - **US3 (Phase 5)**: depends on Foundational plus `render.py` (T031) and `cli.py` (T033). It is
   independent of US2. Without US2, badges render blank.
 - **Polish (Phase 6)**: after the desired stories.
+- **FastMCP migration (Phase 7)**: after Phase 6 (the implementation is complete). It changes
+  only the US1 Gmail-access layer (T019/T020 outputs) and leaves sync, store, and render alone.
 
 ### Within Phases
 
@@ -564,6 +678,8 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
 - T015 and T017 come before T019. T019 comes before T020.
 - T022, T023, and T024 come before T025 (gate).
 - T008 (models) is needed by nearly everything after it.
+- Phase 7: T045 → (T046, T047) → T048 → T049 → T050 → T054. T051–T053 can run any time after
+  T045.
 
 ### Parallel Opportunities
 
@@ -577,6 +693,7 @@ same table and badges print, plus a `Last sync:` line. Exit 0. With no store: on
 - Phase 4: T034 and T035 together.
 - Phase 5: T038 and T040 together.
 - Phase 6: T041 and T042 together.
+- Phase 7: T046 and T047 together; T051, T052, and T053 together.
 
 ---
 

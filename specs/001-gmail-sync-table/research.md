@@ -4,19 +4,52 @@
 
 Each entry records a decision, why it was made, and what else was considered.
 
-## R1. MCP SDK version and server API
+## R1. MCP framework: FastMCP (revised 2026-10-14)
 
-- **Decision**: Use `mcp` 2.x (latest on PyPI: 2.3.0). The server class is `MCPServer`
-  (`from mcp.server import MCPServer`), tools are registered with `@server.tool()`, and the CLI
-  connects with `mcp.Client` over stdio using `StdioServerParameters`. Tests connect `Client`
-  directly to the `MCPServer` instance in-process, so no subprocess and no network is needed.
-- **Rationale**: v2 is the current stable line. Tool results expose `structured_content` and
-  `is_error`, which lets the CLI read typed results and surface auth errors cleanly (Principle VI).
-  The in-process client makes MCP contract tests cheap.
-- **Alternatives considered**: Pin `mcp<2` to keep the `FastMCP` class named in the constitution and
-  Python 3.10 support. Rejected: it locks the project to a superseded line on day one.
-- **Consequence**: `mcp` 2.x requires Python 3.11+. The constitution says Python ≥ 3.10 and names
-  "FastMCP". See Complexity Tracking in `plan.md`; a PATCH amendment is recommended.
+- **Decision**: Build the server and the CLI-side client on the standalone **`fastmcp`** package
+  (`fastmcp>=4.1,<5`; 4.1.0 is current on PyPI). It replaces direct use of the `mcp` 2.x SDK
+  (`MCPServer`, `mcp.Client`, `StdioServerParameters`).
+  - Server: `server = FastMCP("applytrail-gmail", mask_error_details=True)`, tools registered with
+    `@server.tool`, run with `server.run("stdio", show_banner=False)`.
+  - Tools return the Pydantic models (`SearchPage`, `EmailMeta`) directly. FastMCP derives the
+    output schema from the return annotation and fills `structured_content`. The hand-built
+    `CallToolResult` wrapping goes away.
+  - Expected failures raise `fastmcp.exceptions.ToolError("<PREFIX>: …")`. FastMCP sends the message
+    text unchanged with `is_error = true`, so the contract's prefixes are preserved. Unexpected
+    exceptions become `Error calling tool '<name>'` with details hidden by `mask_error_details`;
+    the client maps that text to `GmailError("unknown")`, as it does today.
+  - Client: `fastmcp.Client(StdioTransport(command=sys.executable, args=["-m",
+    "applytrail.mcp_server"], env=…))`. Tests pass the `FastMCP` instance to `Client` for an
+    in-process session. Calls use `call_tool(..., raise_on_error=False)` so `mcp_client.py` keeps
+    the single prefix-to-error mapping.
+  - `fastmcp.Client` is async-only, so the anyio blocking portal in `mcp_client.py` stays.
+- **Rationale**: The user asked for FastMCP. It is the framework the constitution first named, and
+  it is the higher-level API. Verified in a scratch venv against `fastmcp` 4.1.0:
+  - `ToolError` text arrives verbatim (no "Error executing tool" prefix). That prefix is the
+    reason the current server builds `CallToolResult` by hand, so about 25 lines of
+    `_call`/`_error` plumbing go away.
+  - Pydantic return types give the same output schema and `structured_content` shape as today.
+  - Pydantic `Field` constraints (`ge`/`le`, descriptions) reach the input schema unchanged.
+  - Invalid arguments come back as `is_error` results, not exceptions.
+  - With `show_banner=False`, the server writes nothing to stdout outside the protocol.
+    Tracebacks for unexpected errors go to stderr through Rich logging (Principle VI).
+  - `fastmcp` 4.1.0 depends on `mcp==2.3.0` (through `fastmcp-slim`), which is the version locked
+    today. The protocol layer does not change.
+- **Alternatives considered**:
+  - Keep `mcp` 2.x `MCPServer` (current code). Rejected: the user asked to move. It also needs the
+    manual `CallToolResult` workaround for error text.
+  - `mcp<2` with `mcp.server.fastmcp.FastMCP` (the class bundled in SDK v1). Rejected: superseded
+    line. It would also downgrade the protocol library that `fastmcp` 4.x itself requires.
+- **Consequences**:
+  - Python stays ≥ 3.11. `fastmcp` allows 3.10, but its `mcp` 2.x dependency needs 3.11.
+  - The dependency tree is larger: `fastmcp` brings in `httpx`, `cyclopts`, auth and HTTP extras
+    that the stdio server does not use. This is accepted for API simplicity. If install size
+    matters, `fastmcp-slim[server,client]` is the trimmed alternative; it was not chosen because
+    `fastmcp` is what the docs and the user name.
+  - `fastmcp.Client.list_tools()` returns a list, not a result object. Tool schema fields are
+    `input_schema`/`output_schema` (the camelCase names are deprecated).
+  - The constitution's Technical Constraints say "`mcp` 2.x `MCPServer`" and need a PATCH
+    amendment to name `fastmcp` (see `plan.md` Complexity Tracking).
 
 ## R2. LLM provider and structured output
 
@@ -174,7 +207,7 @@ Each entry records a decision, why it was made, and what else was considered.
 
 - **Decision**: `pytest` unit tests for normalize, merge, store, sync orchestration (with a fake
   MCP client and fake extractor), render (Rich console recording at width 100), and CLI error
-  mapping. MCP contract tests run the real `MCPServer` in-process with a fake Gmail service. The
-  golden set lives in `tests/golden/` as anonymized `.eml`-like JSON plus expected labels;
+  mapping. MCP contract tests run the real `FastMCP` server in-process (`fastmcp.Client(server)`)
+  with a fake Gmail service. The golden set lives in `tests/golden/` as anonymized `.eml`-like JSON plus expected labels;
   `scripts/eval_extractor.py` runs it against the live model and prints accuracy. CI never runs it.
 - **Rationale**: Principle VIII.

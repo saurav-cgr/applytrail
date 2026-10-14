@@ -11,6 +11,13 @@ Other Gmail failures return `is_error = true` with a prefix the CLI maps to exit
 `NETWORK:` (connection failures), `RATE_LIMITED:` (Gmail API HTTP 429 after server-side retry),
 `GMAIL_ERROR:` (anything else, with the HTTP status).
 
+Implementation: built with FastMCP (`fastmcp` 4.x, research R1). Expected failures are raised as
+`ToolError` carrying exactly the text above, which FastMCP passes through unchanged. Any other
+exception is masked (`mask_error_details=True`) to `Error calling tool '<name>'`, with no internal
+detail, and the CLI treats it as `GMAIL_ERROR` (unknown status). Argument validation failures are
+also `is_error` results. The wire contract below is unchanged by the migration from `mcp` 2.x
+`MCPServer`.
+
 ## Tool: `search_job_emails`
 
 > List IDs of likely job-application emails received after a given time, oldest first.
