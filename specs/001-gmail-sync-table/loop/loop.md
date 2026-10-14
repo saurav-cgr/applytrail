@@ -14,7 +14,7 @@
 | D6 | US2 (T034–T037) done and landed as one `feat(us2): ...` commit | `uv run pytest tests/unit/test_merge.py tests/integration/test_sync_incremental.py tests/unit/test_render.py` exits 0 at that commit; second sync yields zero changes/badges (SC-004 test) | checker-pass |
 | D7 | US3 (T038–T040) done and landed as one `feat(us3): ...` commit | `uv run pytest tests/unit/test_cli.py tests/unit/test_render_perf.py` exits 0 at that commit; perf test asserts < 2 s for 500 rows (SC-002) | checker-pass |
 | D8 | Polish (T041–T043) done | `uv run ruff check . && uv run ruff format --check . && uv run pytest` exits 0; `grep -rn "google.genai\|import ollama" src/` empty; `grep -rnw "modify\|send\|trash\|batchDelete" src/applytrail/gmail_client.py` empty (whole words; human ruling 2026-10-14); README.md exists | checker-pass |
-| D9 | T044 quickstart validation on real mailbox (manual) | `tests/golden/RESULTS.md` records Scenarios 1–6 + 3b timing ≤ 60 s (SC-001); human signs off | pending |
+| D9 | T044 quickstart validation on real mailbox (manual) | `tests/golden/RESULTS.md` records Scenarios 1–6; Scenario 3b (timing ≤ 60 s, SC-001) excluded by human ruling 2026-10-14, see DEBT-002; human signs off | pending |
 
 Statuses: pending → maker-ready → checker-pass | checker-fail → human-signed.
 

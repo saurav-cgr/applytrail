@@ -398,3 +398,4 @@ now ready for the checker.
   - The README states behaviour from `contracts/cli.md` and the code; the live Gmail and Ollama steps are untested until T044 (D9).
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D8 (commit `16af966`).
 - Human ruling (2026-10-14, after iteration 23): the D8 Gmail write-call grep now uses whole words (`grep -rnw`), so the required `sender` field no longer matches `send`. The human changed the criterion; the maker only applied the edit. The new grep prints nothing.
+- Human ruling (2026-10-14, after iteration 23): the human will not run quickstart Scenario 3b (speed and memory). D9 now requires Scenarios 1–6 without 3b. The SC-001 gap is recorded as DEBT-002, accepted.
