@@ -306,3 +306,95 @@ def test_apply_rejects_unusable_extraction():
     with pytest.raises(ValueError):
         merge.apply(store, extraction(status="unknown"), email("a", "2026-10-01T10:00:00Z"))
     assert store.applications == {}
+
+
+# --- rule 4: badges -----------------------------------------------------------------------------
+
+
+def run(store, *pairs):
+    """Apply `pairs` as one sync run and return its (added, updated) badge lists."""
+    tracker = merge.BadgeTracker.begin(store)
+    for e, m in pairs:
+        tracker.record(merge.apply(store, e, m))
+    return tracker.badges(store)
+
+
+def test_created_in_this_run_is_added():
+    store = Store.empty()
+    assert run(store, pair("confirm_acme_backend")) == (["acme|backend engineer"], [])
+
+
+def test_created_then_changed_in_same_run_is_only_added():
+    store = Store.empty()
+    badges = run(store, pair("confirm_acme_backend"), pair("reject_acme_backend"))
+    assert badges == (["acme|backend engineer"], [])
+
+
+def test_status_change_in_later_run_is_updated():
+    store = Store.empty()
+    run(store, pair("confirm_acme_backend"))
+    assert run(store, pair("reject_acme_backend")) == ([], ["acme|backend engineer"])
+
+
+def test_last_activity_change_alone_is_updated():
+    store = Store.empty()
+    merge.apply(store, extraction(status="applied"), email("a", "2026-10-01T10:00:00Z"))
+    badges = run(store, (extraction(status="applied"), email("b", "2026-10-02T10:00:00Z")))
+    assert badges == ([], ["acme|backend engineer"])
+
+
+def test_role_filled_by_rekey_is_updated_under_new_key():
+    store = Store.empty()
+    merge.apply(store, extraction(role=None), email("a", "2026-10-01T10:00:00Z"))
+    badges = run(store, (extraction(), email("b", "2026-10-02T10:00:00Z")))
+    assert badges == ([], ["acme|backend engineer"])
+
+
+def test_created_then_rekeyed_in_same_run_is_added_under_new_key():
+    store = Store.empty()
+    badges = run(
+        store,
+        (extraction(role=None), email("a", "2026-10-01T10:00:00Z")),
+        (extraction(), email("b", "2026-10-02T10:00:00Z")),
+    )
+    assert badges == (["acme|backend engineer"], [])
+
+
+def test_delayed_older_email_gives_no_badge():
+    store = Store.empty()
+    run(store, pair("confirm_acme_backend"), pair("reject_acme_backend"))
+    before = store.applications["acme|backend engineer"].model_copy(deep=True)
+
+    assert run(store, pair("delayed_old_email")) == ([], [])
+    app = store.applications["acme|backend engineer"]
+    assert app.status is before.status
+    assert app.last_activity == before.last_activity
+    assert app.first_seen == before.first_seen
+    assert app.message_ids == [*before.message_ids, "msg-acme-003"]
+
+
+def test_first_seen_only_change_gives_no_badge():
+    store = Store.empty()
+    run(store, pair("confirm_acme_backend"))
+    older = (extraction(status="applied"), email("early", "2026-09-01T10:00:00Z"))
+
+    assert run(store, older) == ([], [])
+    assert store.applications["acme|backend engineer"].first_seen == datetime(
+        2026, 9, 1, 10, 0, tzinfo=UTC
+    )
+
+
+def test_badge_lists_are_sorted():
+    store = Store.empty()
+    badges = run(
+        store,
+        (extraction(company="Zeta"), email("z", "2026-10-02T10:00:00Z")),
+        (extraction(company="Acme"), email("a", "2026-10-01T10:00:00Z")),
+    )
+    assert badges == (["acme|backend engineer", "zeta|backend engineer"], [])
+
+
+def test_badges_with_no_emails_are_empty():
+    store = Store.empty()
+    run(store, pair("confirm_acme_backend"))
+    assert run(store) == ([], [])

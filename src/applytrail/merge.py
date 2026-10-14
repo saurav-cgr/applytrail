@@ -3,7 +3,7 @@
 Pure functions on the in-memory `Store`; no I/O and no model calls (Principle III).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from applytrail.models import Application, EmailMeta, Extraction, Store
@@ -82,6 +82,46 @@ def apply(store: Store, extraction: Extraction, email: EmailMeta) -> MergeResult
         if app.role is None:
             app.role = extraction.role
     return MergeResult(key=key, created=False, rekeyed_from=rekeyed_from)
+
+
+@dataclass
+class BadgeTracker:
+    """Rule 4 for one sync run: which keys are `added` (NEW) and `updated` (UPD)."""
+
+    start: dict[str, tuple] = field(default_factory=dict)
+    created: set[str] = field(default_factory=set)
+
+    @classmethod
+    def begin(cls, store: Store) -> "BadgeTracker":
+        return cls(start={key: _badge_fields(app) for key, app in store.applications.items()})
+
+    def record(self, result: MergeResult) -> None:
+        old = result.rekeyed_from
+        if old is not None:
+            # Re-keying `ck|` to `ck|rk` carries the start-of-run values to the new key.
+            if old in self.start:
+                self.start[result.key] = self.start.pop(old)
+            if old in self.created:
+                self.created.discard(old)
+                self.created.add(result.key)
+        if result.created:
+            self.created.add(result.key)
+
+    def badges(self, store: Store) -> tuple[list[str], list[str]]:
+        """Sorted `(added, updated)`; a key is never in both."""
+        added = sorted(k for k in self.created if k in store.applications)
+        updated = sorted(
+            key
+            for key, fields in self.start.items()
+            if key not in self.created
+            and key in store.applications
+            and _badge_fields(store.applications[key]) != fields
+        )
+        return added, updated
+
+
+def _badge_fields(app: Application) -> tuple:
+    return (app.status, app.role, app.last_activity)
 
 
 def _rekey(store: Store, old: str, new: str, role: str | None) -> None:

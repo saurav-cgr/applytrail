@@ -1,7 +1,7 @@
 """Table and summary rendering (T030, contracts/cli.md "Table layout")."""
 
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from rich.console import Console
@@ -143,6 +143,38 @@ def test_company_links_to_the_gmail_thread():
 def test_badge_column_blank_without_badges():
     row = body_lines(rendered(store_with(app())))[0]
     assert row.split("│")[1].strip() == ""
+
+
+def test_badges_are_text_without_colour():
+    added, updated, plain = app("Acme", day=3), app("Globex", day=2), app("Initech", day=1)
+    data = store_with(added, updated, plain)
+    data.sync.added = [added.key]
+    data.sync.updated = [updated.key]
+
+    rows = body_lines(rendered(data, no_color=True))
+
+    assert [r.split("│")[1].strip() for r in rows] == ["NEW", "UPD", ""]
+    assert [r.split("│")[2].strip() for r in rows] == ["Acme", "Globex", "Initech"]
+
+
+def test_second_sync_with_no_changes_shows_no_badges(tmp_path, monkeypatch):
+    # US2 scenario 3: the run that finds nothing new clears the previous run's badges.
+    from applytrail import sync
+    from applytrail.config import Settings
+    from tests.fakes import FakeExtractor, FakeMcpClient, load_fixture
+
+    monkeypatch.setenv("APPLYTRAIL_HOME", str(tmp_path))
+    settings = Settings.from_env()
+    fixtures = [load_fixture("confirm_acme_backend")]
+    data = Store.empty()
+    now = datetime(2026, 10, 14, 12, 0, tzinfo=UTC)
+    for run_at in (now, now + timedelta(days=1)):
+        sync.run_sync(data, FakeMcpClient(fixtures), FakeExtractor(fixtures), settings, run_at)
+        badges = [r.split("│")[1].strip() for r in body_lines(rendered(data))]
+        if run_at == now:
+            assert badges == ["NEW"]
+
+    assert badges == [""]
 
 
 def test_empty_store_prints_message():

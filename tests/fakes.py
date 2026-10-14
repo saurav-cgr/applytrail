@@ -91,6 +91,7 @@ class FakeExtractor:
 
     - `invalid_ids`: message IDs for which `extract` raises `ExtractionInvalid`.
     - `unavailable_on_call`: the n-th `extract` call (1-based) raises `ProviderUnavailable`.
+    - `interrupt_on_call`: the n-th `extract` call (1-based) raises `KeyboardInterrupt`.
     - `ready_error`: raised by `check_ready` when set.
     """
 
@@ -100,12 +101,14 @@ class FakeExtractor:
         *,
         invalid_ids: set[str] | None = None,
         unavailable_on_call: int | None = None,
+        interrupt_on_call: int | None = None,
         ready_error: AppError | None = None,
         model: str = "fake-model",
     ) -> None:
         self.expected = {f["message_id"]: f["expected"] for f in fixtures}
         self.invalid_ids = invalid_ids or set()
         self.unavailable_on_call = unavailable_on_call
+        self.interrupt_on_call = interrupt_on_call
         self.ready_error = ready_error
         self.model = model
         self.ready_calls = 0
@@ -122,6 +125,8 @@ class FakeExtractor:
         self.extracted_ids.append(email.message_id)
         if self.unavailable_on_call is not None and self.calls == self.unavailable_on_call:
             raise ProviderUnavailable("unresponsive", self.model)
+        if self.interrupt_on_call is not None and self.calls == self.interrupt_on_call:
+            raise KeyboardInterrupt
         if email.message_id in self.invalid_ids:
             raise ExtractionInvalid(f"invalid output for {email.message_id}")
         return Extraction.model_validate(self.expected[email.message_id])

@@ -430,13 +430,13 @@ added or changed in the latest run carry `NEW` / `UPD`.
 for an existing application. Sync again. Only those two rows are badged (`NEW`, `UPD`), and only
 the two new emails are fetched and extracted (spec US2 scenarios 1–5).
 
-- [ ] T034 [P] [US2] Extend `tests/unit/test_merge.py` with badge tracking (data-model.md rule 4):
+- [x] T034 [P] [US2] Extend `tests/unit/test_merge.py` with badge tracking (data-model.md rule 4):
   - An application created in this run goes in `added`.
   - An existing application whose `status`, `role`, or `last_activity` differs from its value at
     the start of the run goes in `updated` and never also in `added`.
   - An older delayed email (`delayed_old_email.json`) changes neither status nor badges, and only
     appends `message_id` and maybe lowers `first_seen`. A `first_seen`-only change gives no badge.
-- [ ] T035 [P] [US2] Write `tests/integration/test_sync_incremental.py`:
+- [x] T035 [P] [US2] Write `tests/integration/test_sync_incremental.py`:
   - The second run searches `after = checkpoint − 1 h`.
   - Overlap messages already in `processed` are neither fetched nor extracted (assert on fake call
     counts).
@@ -450,7 +450,7 @@ the two new emails are fetched and extracted (spec US2 scenarios 1–5).
     - A re-run extracts only the remaining 8 (SC-005).
   - Ctrl-C (`KeyboardInterrupt` from the fake) gives `stop_reason="interrupted"`, with the same
     resume behaviour.
-- [ ] T036 [US2] Update `src/applytrail/merge.py` and `src/applytrail/sync.py` so T034 and T035
+- [x] T036 [US2] Update `src/applytrail/merge.py` and `src/applytrail/sync.py` so T034 and T035
   pass:
   - At run start, reset `sync.added` and `sync.updated` to `[]`, and snapshot `(status, role,
     last_activity)` per key.
@@ -459,7 +459,7 @@ the two new emails are fetched and extracted (spec US2 scenarios 1–5).
   - Re-keying (`ck|` to `ck|rk`) carries the snapshot over to the new key.
   - On `AppError` or `KeyboardInterrupt` inside the loop, set `stop_reason`, `pending`, and
     `last_sync_complete=False`, then re-raise to the CLI.
-- [ ] T037 [US2] Update `src/applytrail/render.py` and `tests/unit/test_render.py`:
+- [x] T037 [US2] Update `src/applytrail/render.py` and `tests/unit/test_render.py`:
   - The badge column shows `NEW` for keys in `sync.added` and `UPD` for keys in `sync.updated`,
     as text readable without colour.
   - A second run with no changes shows no badges (US2 scenario 3).
