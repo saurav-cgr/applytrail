@@ -285,3 +285,21 @@ now ready for the checker.
   - `verdicts.md` still holds the checker's uncommitted V005 and V006 text. The maker does not commit checker files, so it stays out of both commits.
   - The `feat(us1)` commit is on the feature branch only. Nothing is pushed.
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D5 (commit `d3fa14b`).
+
+## Iteration 17 — 2026-10-14
+- Targeted criteria: D6 (US2), first increment: T034–T036. D5 is checker-pass.
+- Worktree: `../applytrail-loop-iter-17` on new branch `us2-wip` (from `b8a8ae3`; removed after commit `9e3b573`). Same pattern as M-009.
+- Change:
+  - Tests first, confirmed failing. `tests/unit/test_merge.py`: 10 new rule-4 badge tests failed with `AttributeError` (no `merge.BadgeTracker`). They cover created → added; created then changed in the same run → added only; later status change → updated; `last_activity`-only change → updated; re-key in a later run → updated under the new key; created then re-keyed in the same run → added under the new key; delayed older email → no badge, status kept, only its `message_id` appended; `first_seen`-only change → no badge; sorted lists; empty run → empty lists.
+  - `tests/integration/test_sync_incremental.py` (new, 9 tests): 6 failed before the change (badge lists and `stop_reason` still `complete`). The other 3 (overlap search window, overlap skip, no new mail) already passed on the US1 code. They cover the second-run search window `checkpoint − 1 h`; overlap messages neither fetched nor extracted; new application `added`, status change `updated` and the row moving to the top in `render.sort_key` order; no new mail gives empty badges, unchanged checkpoint and identical `applications` JSON (SC-004); `ProviderUnavailable` on email 13 of 20 gives 12 processed, checkpoint unchanged, `provider_unavailable`, `pending=8`, message `8 emails pending`, and a re-run extracts exactly the other 8 (SC-005); Ctrl-C on email 13 gives `interrupted` with the same resume; a Gmail rate limit on the 3rd fetch gives `pending=3` in the error message; a network failure during search keeps the previous badges and checkpoint.
+  - `tests/fakes.py`: `FakeExtractor(interrupt_on_call=n)` raises `KeyboardInterrupt`.
+  - `src/applytrail/merge.py`: `BadgeTracker` (`begin(store)`, `record(result)`, `badges(store) -> (added, updated)`) implements rule 4. Re-keying carries the start snapshot and the created mark to the new key. Both lists are sorted, and a key is never in both.
+  - `src/applytrail/sync.py`: badges are reset to `[]` once the search succeeds, then refreshed after each apply, so periodic saves hold current badges. On `AppError` or `KeyboardInterrupt` anywhere in the run, `_finish` records `stop_reason`, `pending = candidates − processed`, `last_sync_complete=False`, `last_sync_at` and partial counts, then re-raises with the checkpoint unchanged. `ProviderUnavailable` and `GmailRateLimited` are re-raised with the real pending count, which fixes the iteration-14 "0 emails pending" risk without touching the CLI. Run counts `added`/`updated` now come from the badge lists.
+  - `tasks.md`: T034–T036 checked.
+- Verification run by maker: ruff check and format pass; `uv run pytest` 447 passed.
+- Maker self-assessment (maker's own view, NOT a verdict): T034–T036 done. D6 not ready: T037 (render badge tests) and the single `feat(us2)` commit remain.
+- Open questions / risks:
+  - `stop_reason` has no rate-limit value in data-model.md, so every non-Ollama `AppError` (rate limit, network, auth, Gmail error) is stored as `network`. The value only feeds messages (data-model.md), but a reviewer may want a new literal.
+  - Badges reset only after the search succeeds. A failure during the search keeps the previous run's badges, so the exit-4 table for a rate limit hit during the search shows the last run's badges. Resetting before the search would follow data-model.md "reset at the start of every run" more literally.
+  - The re-raised error uses `from None`, so the original exception is not chained in a debug log.
+- Handoff: not ready for check yet. Next maker iteration: T037, then squash `us2-wip` into one `feat(us2): ...` commit.
