@@ -329,3 +329,15 @@ now ready for the checker.
 - Maker self-assessment (maker's own view, NOT a verdict): D6 maker-ready.
 - Open questions / risks (from iteration 17, still open): every stop not caused by Ollama is stored as `network`; badges reset only after a successful search.
 - Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to grade D6 (commit `7ebc719`).
+
+## Iteration 20 — 2026-10-14
+- Targeted criteria: D6 (checker-fail, verdict V008)
+- Worktree: `../applytrail-loop-iter-20` on temporary branch `loop-iter-20` from `7ebc719` (both removed afterwards).
+- Change:
+  - Test first, confirmed failing on `7ebc719` (3 cases): `tests/integration/test_sync_incremental.py::test_stop_during_search_clears_badges_and_keeps_data`, parametrized over `NetworkUnavailable`, `GmailRateLimited` and `KeyboardInterrupt` raised by the search. It requires empty `added`/`updated`, zero `added`/`updated`/`read` in `last_run_counts`, `last_sync_complete=False`, `pending=0`, and unchanged checkpoint, applications JSON and `processed`. It replaces `test_network_failure_during_search_keeps_previous_badges_and_state`, which asserted the opposite.
+  - `src/applytrail/sync.py`: `BadgeTracker.begin` and the badge reset now run before the `try` block that holds the search, so they happen at run start (T036, data-model.md SyncState).
+  - Folded into the US2 commit, as M-008 requires. Backup `backup/pre-fix-us2-iter20` is at `e1bcf98` (old history). The fix was squashed with `7ebc719` into `fae030f feat(us2): show what changed since the last sync` (7 files, +470/−69). The commit message now says badges reset before the search. Loop commits `a8a80d0` and `e1bcf98` were replayed as `f7c3ea1` and `1476503` (identical content). The feature branch was then moved to the new tip; nothing is pushed. Verdict V008 names `7ebc719`, which is no longer on the branch. Its replacement is `fae030f`.
+- Verification run by maker on the rebuilt branch: ruff check and format pass; `uv run pytest` 451 passed; the D6 command (`test_merge.py`, `test_sync_incremental.py`, `test_render.py`) 68 passed; `git log` shows one `feat(us2)` commit.
+- Maker self-assessment (maker's own view, NOT a verdict): V008 addressed; D6 maker-ready again.
+- Open questions / risks: a stop during the search now records `read=0`, `pending=0` and empty badges, so the exit-4 table for a rate limit hit during the search shows no badges. This is intended.
+- Handoff: ready-for-check. Run `/speckit.loop.check` in a separate session to re-grade D6 (commit `fae030f`).
