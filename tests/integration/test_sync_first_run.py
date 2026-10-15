@@ -222,3 +222,15 @@ def test_progress_reports_position_and_total(settings):
     run(load_fixtures("newsletter", "job_alert", "html_only_body"), settings, progress=progress)
 
     assert progress == [(0, 3), (1, 3), (2, 3), (3, 3)]
+
+
+# --- Synced mailbox (002 US3, T036) -----------------------------------------------------------
+
+
+def test_first_sync_saves_the_mailbox(settings):
+    data, mcp, _, _ = run(load_fixtures(), settings)
+
+    assert data.sync.mailbox == "me@example.com"
+    assert store.load(settings.store_path).sync.mailbox == "me@example.com"
+    # Exactly once per run, before the first search.
+    assert mcp.account_calls == [0]

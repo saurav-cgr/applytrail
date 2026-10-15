@@ -101,5 +101,11 @@ class GmailError(AppError):
         super().__init__(f"Gmail returned an error (HTTP {status}). Try again later.")
 
 
+class InvalidInput(AppError):
+    """Command-line input that needs fixing (an empty name or a bad row number)."""
+
+    exit_code = 2
+
+
 class ExtractionInvalid(Exception):
     """The model's output failed validation. The email is skipped; this never exits the CLI."""

@@ -579,3 +579,349 @@ def test_offline_imports_no_network_module(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert result.stdout == "[]\n"
+
+
+# --- check (US1, T015, contracts/cli.md `check`) -----------------------------------------------
+
+
+def copy_lookup_store(settings) -> bytes:
+    import shutil
+    from pathlib import Path
+
+    settings.home.mkdir(parents=True, exist_ok=True)
+    shutil.copy(Path(__file__).parents[1] / "fixtures" / "store_lookup.json", settings.store_path)
+    return settings.store_path.read_bytes()
+
+
+def test_check_found_exits_0_and_lists_both_rows(offline, capsys):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", "acme"]) == 0
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines()[0] == 'Found 2 applications matching "acme":'
+    assert "Backend Engineer" in out and "Data Engineer" in out
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_joins_arguments_with_spaces(offline, capsys):
+    copy_lookup_store(offline.settings)
+    assert cli.main(["check", "acme", "corp"]) == 0
+    joined, _ = capsys.readouterr()
+    assert cli.main(["check", "acme corp"]) == 0
+    single, _ = capsys.readouterr()
+    assert joined == single
+    assert joined.splitlines()[0] == 'Found 2 applications matching "acme corp":'
+
+
+def test_check_not_found_exits_6_with_lines_on_stdout(offline, capsys):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", "Initech"]) == 6
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == [
+        'No application found for "Initech".',
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_typo_suggests_and_exits_6(offline, capsys):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", "Gogle"]) == 6
+
+    out, _ = capsys.readouterr()
+    assert "Did you mean: Google (#2)?" in out.splitlines()
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+@pytest.mark.parametrize("name", ["&", "  ", ",."])
+def test_check_empty_name_exits_2(offline, capsys, name):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", name]) == 2
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "Enter a company name, for example: applytrail check acme")
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_missing_store_says_no_data_and_exits_6(offline, capsys):
+    assert cli.main(["check", "acme"]) == 6
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert not offline.settings.home.exists()
+
+
+def test_check_never_synced_empty_store_says_no_data(offline, capsys):
+    raw = write_existing_store(offline.settings)
+
+    assert cli.main(["check", "acme"]) == 6
+
+    _, err = capsys.readouterr()
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_unreadable_store_exits_5(offline, capsys):
+    offline.settings.home.mkdir(parents=True)
+    offline.settings.store_path.write_text("{not json", encoding="utf-8")
+
+    assert cli.main(["check", "acme"]) == 5
+
+    _, err = capsys.readouterr()
+    assert_one_line(
+        err,
+        f"Cannot read {offline.settings.store_path}. Move it aside and run applytrail to rebuild.",
+    )
+
+
+def test_check_imports_no_network_module(tmp_path):
+    import os
+    import shutil
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    home = tmp_path / "home"
+    home.mkdir()
+    shutil.copy(Path(__file__).parents[1] / "fixtures" / "store_lookup.json", home)
+    (home / "store_lookup.json").rename(home / "applications.json")
+    script = (
+        "import sys\n"
+        "from applytrail import cli\n"
+        "assert cli.main(['check', 'acme']) == 0\n"
+        "loaded = [m for m in ('applytrail.mcp_client', 'applytrail.extractor', "
+        "'applytrail.sync', 'mcp', 'googleapiclient') if m in sys.modules]\n"
+        "print(loaded, file=sys.stderr)\n"
+    )
+    env = {**os.environ, "APPLYTRAIL_HOME": str(home)}
+    result = subprocess.run(
+        [sys.executable, "-c", script], cwd=tmp_path, env=env, capture_output=True, text=True
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == "[]\n"
+
+
+def test_no_subcommand_still_syncs(harness, capsys):
+    assert cli.main([]) == 0
+    assert "sync" in harness.events
+
+
+def test_check_not_found_with_a_wordless_company_exits_6(offline, capsys):
+    # V-003: a stored company that normalizes to no words must not crash suggestions.
+    data = synced_store()
+    wordless = next(iter(data.applications.values())).model_copy(
+        update={"key": "and|engineer", "company": "And", "role": "Engineer"}
+    )
+    data.applications[wordless.key] = wordless
+    raw = write_store(offline.settings, data)
+
+    assert cli.main(["check", "Initech"]) == 6
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines()[0] == 'No application found for "Initech".'
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+# --- open (US2, T024, contracts/cli.md `open`) -------------------------------------------------
+
+ROW_2_URL = "https://mail.google.com/mail/u/0/#all/18c0aa02"
+
+
+@pytest.fixture
+def opener(offline, monkeypatch):
+    """`offline` plus a fake browser; nothing real is ever launched."""
+    from applytrail import links
+
+    offline.browser_calls = []
+    offline.browser_result = True
+    offline.can_launch = True
+
+    def fake_open(url):
+        offline.browser_calls.append(url)
+        return offline.browser_result
+
+    monkeypatch.setattr(links, "open_in_browser", fake_open)
+    monkeypatch.setattr(links, "can_launch_browser", lambda *a, **k: offline.can_launch)
+    offline.raw = copy_lookup_store(offline.settings)
+    return offline
+
+
+def test_open_number_opens_the_thread(opener, capsys):
+    assert cli.main(["open", "2"]) == 0
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == ["Opening Google — Software Engineer (#2)", ROW_2_URL]
+    assert opener.browser_calls == [ROW_2_URL]
+    assert opener.settings.store_path.read_bytes() == opener.raw
+
+
+def test_open_print_never_calls_the_browser(opener, capsys):
+    assert cli.main(["open", "2", "--print"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines() == ["Address for Google — Software Engineer (#2)", ROW_2_URL]
+    assert opener.browser_calls == []
+
+
+def test_open_without_graphical_session_prints_only(opener, capsys):
+    opener.can_launch = False
+
+    assert cli.main(["open", "2"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[0] == "Address for Google — Software Engineer (#2)"
+    assert opener.browser_calls == []
+
+
+def test_open_browser_failure_notes_on_stderr_and_exits_0(opener, capsys):
+    opener.browser_result = False
+
+    assert cli.main(["open", "2"]) == 0
+
+    out, err = capsys.readouterr()
+    assert out.splitlines() == ["Opening Google — Software Engineer (#2)", ROW_2_URL]
+    assert_one_line(err, "Could not open a browser; use the address above.")
+
+
+def test_open_row_out_of_range_exits_2(opener, capsys):
+    assert cli.main(["open", "99"]) == 2
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No row 99. Choose a number from 1 to 7 (see applytrail --offline).")
+    assert opener.browser_calls == []
+
+
+def test_open_by_unique_name(opener, capsys):
+    assert cli.main(["open", "google"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[0] == "Opening Google — Software Engineer (#2)"
+    assert opener.browser_calls == [ROW_2_URL]
+
+
+def test_open_several_matches_lists_rows_and_exits_2(opener, capsys):
+    assert cli.main(["open", "acme"]) == 2
+
+    out, err = capsys.readouterr()
+    assert "First seen" in out
+    assert "Backend Engineer" in out and "Data Engineer" in out
+    numbers = [line.split("│")[1].strip() for line in out.splitlines() if line.startswith("│ ")]
+    assert numbers[1:] == ["1", "5"]  # after the header row
+    assert_one_line(err, 'Several applications match "acme". Run: applytrail open <number>')
+    assert opener.browser_calls == []
+    assert opener.settings.store_path.read_bytes() == opener.raw
+
+
+def test_open_no_match_prints_not_found_and_exits_6(opener, capsys):
+    assert cli.main(["open", "initech"]) == 6
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == [
+        'No application found for "initech".',
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+    assert opener.browser_calls == []
+
+
+@pytest.mark.parametrize("target", ["&", ",."])
+def test_open_empty_name_exits_2(opener, capsys, target):
+    assert cli.main(["open", target]) == 2
+
+    _, err = capsys.readouterr()
+    assert_one_line(err, "Enter a row number or company name, for example: applytrail open 3")
+
+
+def test_open_no_data_exits_6(offline, capsys):
+    assert cli.main(["open", "1"]) == 6
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert not offline.settings.home.exists()
+
+
+def test_open_unreadable_store_exits_5(offline, capsys):
+    offline.settings.home.mkdir(parents=True)
+    offline.settings.store_path.write_text("{not json", encoding="utf-8")
+
+    assert cli.main(["open", "1"]) == 5
+
+
+def test_open_huge_row_number_exits_2(opener, capsys):
+    # V-006: an over-long digit string is out of range, not an unexpected error.
+    target = "9" * 4500
+    assert cli.main(["open", target]) == 2
+
+    _, err = capsys.readouterr()
+    assert_one_line(
+        err, f"No row {target}. Choose a number from 1 to 7 (see applytrail --offline)."
+    )
+    assert opener.browser_calls == []
+
+
+def test_open_row_with_many_leading_zeros(opener, capsys):
+    assert cli.main(["open", "0" * 4500 + "2", "--print"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[0] == "Address for Google — Software Engineer (#2)"
+
+
+# --- synced mailbox (US3, T037) ------------------------------------------------------------------
+
+
+def test_open_print_uses_the_synced_mailbox(offline, capsys):
+    from tests.fakes import load_store_fixture
+
+    lookup_data = load_store_fixture("store_lookup.json")
+    lookup_data.sync.mailbox = "me+jobs@example.com"
+    write_store(offline.settings, lookup_data)
+
+    assert cli.main(["open", "1", "--print"]) == 0
+
+    out, err = capsys.readouterr()
+    assert out.splitlines()[1] == (
+        "https://mail.google.com/mail/u/me%2Bjobs@example.com/#all/18c0aa01"
+    )
+    assert "me+jobs" not in err
+
+
+def test_open_print_without_mailbox_uses_u0(opener, capsys):
+    assert cli.main(["open", "1", "--print"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[1] == "https://mail.google.com/mail/u/0/#all/18c0aa01"
+
+
+def test_mailbox_never_reaches_stderr_or_the_debug_log(harness, capsys, monkeypatch):
+    monkeypatch.setenv("APPLYTRAIL_DEBUG", "1")
+    assert cli.main([]) == 0
+    _, err = capsys.readouterr()
+    assert "me@example.com" not in err
+    assert saved_store(harness.settings).sync.mailbox == "me@example.com"
+
+    address = saved_store(harness.settings).sync.mailbox
+
+    def behaviour(data, on_progress):
+        raise RuntimeError(f"failed for {address}")
+
+    harness.sync_behaviour = behaviour
+    assert cli.main([]) == 1
+
+    _, err = capsys.readouterr()
+    log = harness.settings.debug_log_path.read_text(encoding="utf-8")
+    assert "me@example.com" not in err
+    assert "me@example.com" not in log

@@ -6,7 +6,12 @@ import pytest
 
 from applytrail import render, store, sync
 from applytrail.config import OVERLAP, Settings
-from applytrail.errors import GmailRateLimited, NetworkUnavailable, ProviderUnavailable
+from applytrail.errors import (
+    AuthRequired,
+    GmailRateLimited,
+    NetworkUnavailable,
+    ProviderUnavailable,
+)
 from applytrail.models import Store
 from tests.fakes import FakeExtractor, FakeMcpClient, load_fixture
 
@@ -211,5 +216,56 @@ def test_stop_during_search_clears_badges_and_keeps_data(settings, error):
     assert data.sync.last_sync_complete is False
     assert data.sync.pending == 0
     assert data.sync.checkpoint == before.sync.checkpoint
+    assert applications_json(data) == applications_json(before)
+    assert data.processed == before.processed
+
+
+# --- Synced mailbox (002 US3, T036) -----------------------------------------------------------
+
+
+def saved_without_last_sync_at(settings) -> dict:
+    import json
+
+    saved = json.loads(settings.store_path.read_text(encoding="utf-8"))
+    del saved["sync"]["last_sync_at"]
+    return saved
+
+
+def test_rerun_with_same_account_and_no_new_mail_changes_only_last_sync_at(settings):
+    data = first_store(settings)
+    later = SECOND_RUN + timedelta(days=1)
+    sync_once(data, [fixture("confirm_acme_backend")], settings, SECOND_RUN)
+    before = saved_without_last_sync_at(settings)
+
+    mcp, _ = sync_once(data, [fixture("confirm_acme_backend")], settings, later)
+
+    assert mcp.account_calls == [0]
+    assert saved_without_last_sync_at(settings) == before
+    assert before["sync"]["mailbox"] == "me@example.com"
+    assert store.load(settings.store_path).sync.last_sync_at == later
+
+
+def test_different_account_replaces_the_mailbox(settings):
+    data = first_store(settings)
+    mcp = FakeMcpClient([fixture("confirm_acme_backend")], account="other@example.com")
+    sync.run_sync(data, mcp, FakeExtractor([]), settings, SECOND_RUN)
+
+    assert data.sync.mailbox == "other@example.com"
+    assert store.load(settings.store_path).sync.mailbox == "other@example.com"
+
+
+def test_get_account_failure_stops_the_run_and_keeps_the_mailbox(settings):
+    data = first_store(settings)
+    before = data.model_copy(deep=True)
+    mcp = FakeMcpClient([fixture("reject_acme_backend")], account_error=AuthRequired())
+
+    with pytest.raises(AuthRequired):
+        sync.run_sync(data, mcp, FakeExtractor([]), settings, SECOND_RUN)
+
+    assert mcp.calls == []  # stopped before searching
+    assert data.sync.mailbox == "me@example.com"
+    assert data.sync.last_sync_complete is False
+    assert data.sync.checkpoint == before.sync.checkpoint
+    assert data.sync.added == data.sync.updated == []
     assert applications_json(data) == applications_json(before)
     assert data.processed == before.processed

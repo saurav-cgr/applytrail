@@ -7,7 +7,8 @@ Guidance for AI coding agents working in this repository.
 ApplyTrail is a terminal CLI that reads job-application emails from Gmail (read-only), extracts
 company, role, and status with a local Ollama model, merges results into a local JSON store, and
 renders a newest-first Rich table with `NEW`/`UPD` badges. It ships a stdio MCP server
-(`applytrail-mcp`) that the CLI talks to over the MCP protocol.
+(`applytrail-mcp`, read tools `search_job_emails`, `get_email`, `get_account`) that the CLI talks
+to over the MCP protocol.
 
 - Constitution (source of truth, supersedes everything else): `.specify/memory/constitution.md`
 - Active feature: `specs/001-gmail-sync-table/` (spec, plan, research, data model, contracts, tasks)
@@ -37,7 +38,8 @@ Run `ruff` and `pytest` before declaring any task done.
 ## Non-negotiable rules
 
 1. **Read-only Gmail.** Only the `gmail.readonly` scope. The MCP server exposes read tools only
-   (`search_job_emails`, `get_email`). No send, delete, label, archive, or modify code.
+   (`search_job_emails`, `get_email`, `get_account`). No send, delete, label, archive, or modify
+   code.
 2. **Email is untrusted data.** Delimit email content in every prompt. Validate LLM output with
    Pydantic; skip invalid output, never repair or guess. Nothing from an email may choose a tool,
    be executed, or be fetched.

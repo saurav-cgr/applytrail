@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from applytrail.models import (
+    AccountInfo,
     Application,
     EmailMeta,
     Extraction,
@@ -332,3 +333,37 @@ def test_search_page_shape():
 def test_message_ref_rejects_naive_date():
     with pytest.raises(ValidationError):
         MessageRef(message_id="m1", thread_id="t1", date=datetime(2026, 10, 13, 9, 15))
+
+
+# Mailbox (002 US3, data-model.md SyncState.mailbox and AccountInfo)
+
+BAD_MAILBOXES = ["a", "a@b@c", "me @x.com", "me\n@x.com", "me\t@x.com", "noat", "x" * 251 + "@x.co"]
+
+
+def test_sync_mailbox_defaults_to_none():
+    assert SyncState().mailbox is None
+
+
+@pytest.mark.parametrize("value", ["me+jobs@example.com", "a@b", "x" * 249 + "@x.co"])
+def test_mailbox_accepts_valid_addresses(value):
+    assert make_sync(mailbox=value).mailbox == value
+    assert AccountInfo(email_address=value).email_address == value
+
+
+@pytest.mark.parametrize("value", BAD_MAILBOXES)
+def test_sync_mailbox_rejects_invalid(value):
+    with pytest.raises(ValidationError):
+        make_sync(mailbox=value)
+
+
+@pytest.mark.parametrize("value", BAD_MAILBOXES)
+def test_account_info_rejects_invalid(value):
+    with pytest.raises(ValidationError):
+        AccountInfo(email_address=value)
+
+
+def test_mailbox_255_characters_rejected():
+    value = "x" * 249 + "@x.com"
+    assert len(value) == 255
+    with pytest.raises(ValidationError):
+        make_sync(mailbox=value)

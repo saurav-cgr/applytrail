@@ -6,7 +6,14 @@ from datetime import datetime
 from pathlib import Path
 
 from applytrail.errors import AppError, ExtractionInvalid, ProviderUnavailable
-from applytrail.models import EmailMeta, Extraction, MessageRef, SearchPage
+from applytrail.models import (
+    AccountInfo,
+    EmailMeta,
+    Extraction,
+    MessageRef,
+    SearchPage,
+    Store,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -20,10 +27,16 @@ def load_fixture(name: str) -> dict:
 
 
 def load_fixtures(*names: str) -> list[dict]:
-    """Load the named fixtures, or every fixture when no name is given."""
+    """Load the named fixtures, or every email fixture when no name is given."""
     if names:
         return [load_fixture(n) for n in names]
-    return [load_fixture(p.name) for p in sorted(FIXTURES.glob("*.json"))]
+    paths = sorted(p for p in FIXTURES.glob("*.json") if not p.name.startswith("store_"))
+    return [load_fixture(p.name) for p in paths]
+
+
+def load_store_fixture(name: str) -> Store:
+    """Load a whole store fixture (`store_*.json`) as a validated `Store`."""
+    return Store.model_validate(load_fixture(name))
 
 
 def email_meta(fixture: dict) -> EmailMeta:
@@ -37,6 +50,9 @@ class FakeMcpClient:
     `page_size` messages per page. `get_email` returns an `EmailMeta`.
     Every call is recorded in `calls`. With `fail_on_call=n`, the n-th call (1-based, across
     both methods) raises `error`.
+    `get_account` returns `AccountInfo(email_address=account)` or raises `account_error`. It
+    is kept out of `calls` (so `fail_on_call` counts are unchanged); `account_calls` records
+    `len(calls)` at each call, so `[0]` means "once, before any search or fetch".
     """
 
     def __init__(
@@ -46,8 +62,13 @@ class FakeMcpClient:
         page_size: int = 500,
         fail_on_call: int | None = None,
         error: AppError | None = None,
+        account: str = "me@example.com",
+        account_error: AppError | None = None,
     ) -> None:
         self.fixtures = {f["message_id"]: f for f in fixtures}
+        self.account = account
+        self.account_error = account_error
+        self.account_calls: list[int] = []
         self.page_size = page_size
         self.fail_on_call = fail_on_call
         self.error = error
@@ -76,6 +97,12 @@ class FakeMcpClient:
             next_page_token=str(end) if end < len(matches) else None,
             query=f"after:{int(after.timestamp())}",
         )
+
+    def get_account(self) -> AccountInfo:
+        self.account_calls.append(len(self.calls))
+        if self.account_error is not None:
+            raise self.account_error
+        return AccountInfo(email_address=self.account)
 
     def get_email(self, message_id: str) -> EmailMeta:
         self._record(("get_email", message_id))
@@ -172,12 +199,17 @@ class FakeGmailRequest:
 
 
 class FakeGmailService:
-    """Mimics `service.users().messages()` with only the read methods `list` and `get`."""
+    """Mimics `service.users().messages()` with only the read methods `list` and `get`, and
+    `service.users().getProfile`. `profile_error` is raised by `getProfile` only."""
 
-    def __init__(self, pages=None, messages=None, error=None):
+    def __init__(
+        self, pages=None, messages=None, error=None, email="me@example.com", profile_error=None
+    ):
         self.pages = pages or [[]]
         self.raw = {m["id"]: m for m in (messages or [])}
         self.error = error
+        self.email = email
+        self.profile_error = profile_error
         self.calls = []
 
     def users(self):
@@ -198,3 +230,7 @@ class FakeGmailService:
     def get(self, **kwargs):
         self.calls.append(("get", kwargs))
         return FakeGmailRequest(self.raw.get(kwargs["id"]), self.error)
+
+    def getProfile(self, **kwargs):  # noqa: N802 (Gmail API method name)
+        self.calls.append(("getProfile", kwargs))
+        return FakeGmailRequest({"emailAddress": self.email}, self.profile_error)
