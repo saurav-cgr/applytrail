@@ -579,3 +579,155 @@ def test_offline_imports_no_network_module(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert result.stdout == "[]\n"
+
+
+# --- check (US1, T015, contracts/cli.md `check`) -----------------------------------------------
+
+
+def copy_lookup_store(settings) -> bytes:
+    import shutil
+    from pathlib import Path
+
+    settings.home.mkdir(parents=True, exist_ok=True)
+    shutil.copy(Path(__file__).parents[1] / "fixtures" / "store_lookup.json", settings.store_path)
+    return settings.store_path.read_bytes()
+
+
+def test_check_found_exits_0_and_lists_both_rows(offline, capsys):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", "acme"]) == 0
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines()[0] == 'Found 2 applications matching "acme":'
+    assert "Backend Engineer" in out and "Data Engineer" in out
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_joins_arguments_with_spaces(offline, capsys):
+    copy_lookup_store(offline.settings)
+    assert cli.main(["check", "acme", "corp"]) == 0
+    joined, _ = capsys.readouterr()
+    assert cli.main(["check", "acme corp"]) == 0
+    single, _ = capsys.readouterr()
+    assert joined == single
+    assert joined.splitlines()[0] == 'Found 2 applications matching "acme corp":'
+
+
+def test_check_not_found_exits_6_with_lines_on_stdout(offline, capsys):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", "Initech"]) == 6
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == [
+        'No application found for "Initech".',
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_typo_suggests_and_exits_6(offline, capsys):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", "Gogle"]) == 6
+
+    out, _ = capsys.readouterr()
+    assert "Did you mean: Google (#2)?" in out.splitlines()
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+@pytest.mark.parametrize("name", ["&", "  ", ",."])
+def test_check_empty_name_exits_2(offline, capsys, name):
+    raw = copy_lookup_store(offline.settings)
+
+    assert cli.main(["check", name]) == 2
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "Enter a company name, for example: applytrail check acme")
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_missing_store_says_no_data_and_exits_6(offline, capsys):
+    assert cli.main(["check", "acme"]) == 6
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert not offline.settings.home.exists()
+
+
+def test_check_never_synced_empty_store_says_no_data(offline, capsys):
+    raw = write_existing_store(offline.settings)
+
+    assert cli.main(["check", "acme"]) == 6
+
+    _, err = capsys.readouterr()
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert offline.settings.store_path.read_bytes() == raw
+
+
+def test_check_unreadable_store_exits_5(offline, capsys):
+    offline.settings.home.mkdir(parents=True)
+    offline.settings.store_path.write_text("{not json", encoding="utf-8")
+
+    assert cli.main(["check", "acme"]) == 5
+
+    _, err = capsys.readouterr()
+    assert_one_line(
+        err,
+        f"Cannot read {offline.settings.store_path}. Move it aside and run applytrail to rebuild.",
+    )
+
+
+def test_check_imports_no_network_module(tmp_path):
+    import os
+    import shutil
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    home = tmp_path / "home"
+    home.mkdir()
+    shutil.copy(Path(__file__).parents[1] / "fixtures" / "store_lookup.json", home)
+    (home / "store_lookup.json").rename(home / "applications.json")
+    script = (
+        "import sys\n"
+        "from applytrail import cli\n"
+        "assert cli.main(['check', 'acme']) == 0\n"
+        "loaded = [m for m in ('applytrail.mcp_client', 'applytrail.extractor', "
+        "'applytrail.sync', 'mcp', 'googleapiclient') if m in sys.modules]\n"
+        "print(loaded, file=sys.stderr)\n"
+    )
+    env = {**os.environ, "APPLYTRAIL_HOME": str(home)}
+    result = subprocess.run(
+        [sys.executable, "-c", script], cwd=tmp_path, env=env, capture_output=True, text=True
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == "[]\n"
+
+
+def test_no_subcommand_still_syncs(harness, capsys):
+    assert cli.main([]) == 0
+    assert "sync" in harness.events
+
+
+def test_check_not_found_with_a_wordless_company_exits_6(offline, capsys):
+    # V-003: a stored company that normalizes to no words must not crash suggestions.
+    data = synced_store()
+    wordless = next(iter(data.applications.values())).model_copy(
+        update={"key": "and|engineer", "company": "And", "role": "Engineer"}
+    )
+    data.applications[wordless.key] = wordless
+    raw = write_store(offline.settings, data)
+
+    assert cli.main(["check", "Initech"]) == 6
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines()[0] == 'No application found for "Initech".'
+    assert offline.settings.store_path.read_bytes() == raw

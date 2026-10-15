@@ -77,7 +77,7 @@ model.
   - Change `build_table(store, rows: list[NumberedApplication] | None = None)` to default to `lookup.numbered(store)`.
   - Build the Company link with `links.thread_url(app.thread_id)` and delete `GMAIL_THREAD_URL`. Grep `src/` and `tests/` for other uses of it.
 - [x] T010 Update the table layout section of `README.md` if it describes columns (add the `#` column). Otherwise leave it for polish. (Skipped per loop memory M-006 A1: T046 covers the README.)
-- [ ] T011 Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Then commit `feat(table): add row-number column and shared thread link builder` (Conventional Commit, foundation).
+- [x] T011 Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Then commit `feat(table): add row-number column and shared thread link builder` (Conventional Commit, foundation).
 
 **Checkpoint**: The table shows row numbers within 100 columns, and existing behaviour is unchanged.
 
@@ -91,7 +91,7 @@ model.
 
 ### Tests first (write, run, see them fail)
 
-- [ ] T012 [P] [US1] Add failing tests to `tests/unit/test_lookup.py` for query normalization and matching (research R3):
+- [x] T012 [P] [US1] Add failing tests to `tests/unit/test_lookup.py` for query normalization and matching (research R3):
   - `normalize_query(text) -> list[str]` is `norm_company(text).split()` with one trailing `"and"` word dropped. `"Acme & Co"` → `["acme"]`. `""`, `"   "` and `"&"` → `[]`.
   - `find(store, text)` raises `InvalidInput` when `normalize_query` gives `[]`.
   - Found cases: `acme`, `ACME`, `Acme, Inc.`, `acme corp` and `Acme & Co` each return rows [1, 5] in that order. `glob`, `globex` and `international` return row [3].
@@ -99,7 +99,7 @@ model.
   - Rejected and withdrawn applications are found.
   - An application whose display company differs from its key's company part matches either spelling.
   - `LookupResult` fields are `query: str`, `matches: list[NumberedApplication]` and `suggestions: list[Suggestion]`. `found` is true exactly when `matches` is non-empty.
-- [ ] T013 [US1] Add failing suggestion tests to `tests/unit/test_lookup.py` (research R4; depends on T012, same file):
+- [x] T013 [US1] Add failing suggestion tests to `tests/unit/test_lookup.py` (research R4; depends on T012, same file):
   - `Gogle` → first suggestion `Google` with `numbers == [2]`.
   - A company with several applications lists all its numbers ascending: `Acmee` → `Acme Inc.` with `[1, 5]`.
   - At most 3 suggestions, ordered by score descending and then by casefolded company ascending.
@@ -107,12 +107,12 @@ model.
   - Results are identical across repeated calls.
   - **SC-003** labelled list: at least 20 spelling variants (case, punctuation, legal suffixes, partial names) of fixture companies are all found, and 10 unrelated names (for example `Initech`, `Umbrella`, `Stark Industries`) produce no match.
   - **SC-003a** labelled list: at least 10 one- or two-letter typos of fixture companies. The intended company appears in the suggestions for at least 90% of them.
-- [ ] T014 [P] [US1] Add failing render tests to `tests/unit/test_render.py` for `render_found(result, store, console)` and `render_not_found(result, store, console)` (contracts/cli.md `check`):
+- [x] T014 [P] [US1] Add failing render tests to `tests/unit/test_render.py` for `render_found(result, store, console)` and `render_not_found(result, store, console)` (contracts/cli.md `check`):
   - Header `Found 2 applications matching "acme":`, singular `application` for one match, then the `check` table of matched rows with original numbers. Its columns are `["#", "First seen", "Company", "Role", "Status", "Last seen"]` (no badge column); First seen is `first_seen` as local `YYYY-MM-DD`; Role is ≤ 21 characters; every line is ≤ 100 columns with maximum-length names (FR-004, contracts/cli.md `check`).
   - Not found: `No application found for "Gogle".`, then `Did you mean: Google (#2)?` (and the form `Acme Inc. (#1, #5)`), then `Last sync: 2026-10-14 08:02 (complete)`, using the same wording as `render_last_sync`, including the incomplete forms.
   - No `Did you mean` line when there are no suggestions.
   - The quoted text is the user's raw input, printed literally (`[bold]x[/bold]` is not styled).
-- [ ] T015 [P] [US1] Add failing CLI tests to `tests/unit/test_cli.py` (contracts/cli.md `check`; reuse `Harness` and copy `store_lookup.json` into `APPLYTRAIL_HOME`):
+- [x] T015 [P] [US1] Add failing CLI tests to `tests/unit/test_cli.py` (contracts/cli.md `check`; reuse `Harness` and copy `store_lookup.json` into `APPLYTRAIL_HOME`):
   - `check acme` → exit 0 with both Acme rows on stdout.
   - `check acme corp` (two arguments) is the same as `check "acme corp"`.
   - `check Initech` → exit 6 with the not-found lines on stdout.
@@ -125,14 +125,14 @@ model.
 
 ### Implementation
 
-- [ ] T016 [US1] Add `InvalidInput(AppError)` with `exit_code = 2` that takes its message, in `src/applytrail/errors.py`. Add a test in `tests/unit/test_errors.py`.
-- [ ] T017 [US1] Implement `normalize_query`, the frozen dataclasses `Suggestion(company: str, numbers: list[int], score: float)` and `LookupResult(query, matches, suggestions)` (property `found`), `find(store, text) -> LookupResult`, and the suggestion logic in `src/applytrail/lookup.py`:
+- [x] T016 [US1] Add `InvalidInput(AppError)` with `exit_code = 2` that takes its message, in `src/applytrail/errors.py`. Add a test in `tests/unit/test_errors.py`.
+- [x] T017 [US1] Implement `normalize_query`, the frozen dataclasses `Suggestion(company: str, numbers: list[int], score: float)` and `LookupResult(query, matches, suggestions)` (property `found`), `find(store, text) -> LookupResult`, and the suggestion logic in `src/applytrail/lookup.py`:
   - Match the lookup words against both `norm_company(app.company)` and the company part of `app.key` (before `|`), each with the same trailing-`and` rule. Match on consecutive whole words, where the last word may be a prefix.
   - Suggestions use `difflib.SequenceMatcher` on the normalized text versus the whole name and every word run of the same length. Keep the best score per normalized company, apply cutoff `0.75`, keep at most 3, and use the display company of that company's newest application.
   - Make T012 and T013 pass.
-- [ ] T018 [US1] Implement `render_found` and `render_not_found` in `src/applytrail/render.py`. `render_found` uses a new `build_check_table(store, rows)`: the columns from T014, with First seen at width 10 and Role at `max_width=21`, and the Company link as in `build_table`. Share the row-building code with `build_table` rather than duplicating it. Print all email-derived and user text with `markup=False, highlight=False` or as `Text`. When `last_sync_at` is null, the not-found answer prints `No sync has run yet.` Make T014 pass.
-- [ ] T019 [US1] Add argparse subparsers to `src/applytrail/cli.py` with `add_subparsers(dest="command", required=False)` and a `check` subcommand (`names`, `nargs="+"`). `_check_command(settings, out, names)` loads the store, prints `NO_DATA_MESSAGE` and returns 6 when there are no applications and no sync, catches `InvalidInput` (it's an `AppError`, so the existing handler prints it and returns 2), and returns 0 when found or 6 when not found. Import no network module on this path. Make T015 pass.
-- [ ] T020 [US1] Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `feat(us1): check whether a company was already applied to`.
+- [x] T018 [US1] Implement `render_found` and `render_not_found` in `src/applytrail/render.py`. `render_found` uses a new `build_check_table(store, rows)`: the columns from T014, with First seen at width 10 and Role at `max_width=21`, and the Company link as in `build_table`. Share the row-building code with `build_table` rather than duplicating it. Print all email-derived and user text with `markup=False, highlight=False` or as `Text`. When `last_sync_at` is null, the not-found answer prints `No sync has run yet.` Make T014 pass.
+- [x] T019 [US1] Add argparse subparsers to `src/applytrail/cli.py` with `add_subparsers(dest="command", required=False)` and a `check` subcommand (`names`, `nargs="+"`). `_check_command(settings, out, names)` loads the store, prints `NO_DATA_MESSAGE` and returns 6 when there are no applications and no sync, catches `InvalidInput` (it's an `AppError`, so the existing handler prints it and returns 2), and returns 0 when found or 6 when not found. Import no network module on this path. Make T015 pass.
+- [x] T020 [US1] Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `feat(us1): check whether a company was already applied to`.
 
 **Checkpoint**: The MVP is shippable: `check` works fully offline.
 

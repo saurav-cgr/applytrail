@@ -73,3 +73,12 @@ def test_gmail_error_exit_1_names_status():
 
 def test_extraction_invalid_is_not_an_app_error():
     assert not issubclass(ExtractionInvalid, AppError)
+
+
+def test_invalid_input_carries_its_message_and_exits_2():
+    from applytrail.errors import InvalidInput
+
+    error = InvalidInput("Enter a company name, for example: applytrail check acme")
+    assert isinstance(error, AppError)
+    assert error.exit_code == 2
+    assert error.message == "Enter a company name, for example: applytrail check acme"

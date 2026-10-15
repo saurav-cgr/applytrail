@@ -1,4 +1,4 @@
-"""Table and summary rendering (T030, contracts/cli.md "Table layout")."""
+"""Table and summary rendering (T030, T014; contracts/cli.md "Table layout" and `check`)."""
 
 import time
 from datetime import UTC, datetime, timedelta
@@ -6,9 +6,16 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from rich.console import Console
 
-from applytrail.lookup import numbered
+from applytrail.lookup import LookupResult, Suggestion, find, numbered
 from applytrail.models import Application, RunCounts, Store
-from applytrail.render import build_table, render_summary, render_table
+from applytrail.render import (
+    build_check_table,
+    build_table,
+    render_found,
+    render_not_found,
+    render_summary,
+    render_table,
+)
 from tests.fakes import load_store_fixture
 
 
@@ -231,3 +238,160 @@ def test_subset_keeps_original_numbers():
 def test_company_from_email_is_not_rich_markup():
     row = body_lines(rendered(store_with(app("[bold]Evil[/bold]", "Engineer"))))[0]
     assert row.split("│")[3].strip() == "[bold]Evil[/bold]"
+
+
+# --- check output (T014, contracts/cli.md `check`) ---
+
+
+@pytest.fixture
+def utc(monkeypatch):
+    monkeypatch.setenv("TZ", "UTC")
+    time.tzset()
+    yield
+    monkeypatch.undo()
+    time.tzset()
+
+
+def lookup_store() -> Store:
+    return load_store_fixture("store_lookup.json")
+
+
+def found_text(text: str, data: Store | None = None) -> str:
+    data = data or lookup_store()
+    out = console()
+    render_found(find(data, text), data, out)
+    return out.export_text()
+
+
+def not_found_text(result: LookupResult, data: Store | None = None) -> str:
+    out = console()
+    render_not_found(result, data or lookup_store(), out)
+    return out.export_text()
+
+
+def test_check_table_columns():
+    data = lookup_store()
+    columns = build_check_table(data, numbered(data)).columns
+    assert [c.header for c in columns] == [
+        "#",
+        "First seen",
+        "Company",
+        "Role",
+        "Status",
+        "Last seen",
+    ]
+    assert [c.width or c.max_width for c in columns] == [1, 10, 25, 21, 12, 10]
+
+
+def test_found_header_and_rows_with_original_numbers(utc):
+    text = found_text("acme")
+    lines = text.splitlines()
+    assert lines[0] == 'Found 2 applications matching "acme":'
+    rows = body_lines(text)
+    assert [[cell.strip() for cell in r.split("│")[1:-1]] for r in rows] == [
+        ["1", "2026-09-30", "Acme Inc.", "Backend Engineer", "Interview", "2026-10-12"],
+        ["5", "2026-08-20", "Acme Inc.", "Data Engineer", "Rejected", "2026-09-02"],
+    ]
+    assert "NEW" not in text and "UPD" not in text
+
+
+def test_found_one_application_is_singular():
+    assert found_text("google").splitlines()[0] == 'Found 1 application matching "google":'
+
+
+def test_found_quotes_raw_input_literally():
+    data = lookup_store()
+    out = console()
+    render_found(find(data, "[bold]evil[/bold]"), data, out)
+    assert out.export_text().splitlines()[0] == (
+        'Found 1 application matching "[bold]evil[/bold]":'
+    )
+
+
+def test_check_table_first_seen_is_local_date(monkeypatch):
+    late = app("Acme", "Engineer", day=9).model_copy(
+        update={"first_seen": datetime(2026, 10, 1, 20, 0, tzinfo=UTC)}
+    )
+    data = store_with(late)
+    monkeypatch.setenv("TZ", "Pacific/Auckland")
+    time.tzset()
+    try:
+        out = console()
+        render_found(find(data, "acme"), data, out)
+    finally:
+        monkeypatch.undo()
+        time.tzset()
+    # 2026-10-01 20:00 UTC is 2026-10-02 09:00 in Auckland.
+    assert body_lines(out.export_text())[0].split("│")[2].strip() == "2026-10-02"
+
+
+def test_check_table_with_long_names_fits_100_columns():
+    apps = [app(f"{i:03d}" + "C" * 80, "R" * 80, thread=f"t{i}") for i in range(999)]
+    data = store_with(*apps)
+    out = console()
+    render_found(find(data, "001"), data, out)
+    text = out.export_text()
+    assert all(len(line) <= 100 for line in text.splitlines())
+    row = body_lines(text)[0]
+    assert len(row.split("│")[4].strip()) <= 21
+    assert row.split("│")[4].strip().endswith("…")
+
+
+def test_not_found_with_suggestion_and_last_sync(utc):
+    assert not_found_text(find(lookup_store(), "Gogle")).splitlines() == [
+        'No application found for "Gogle".',
+        "Did you mean: Google (#2)?",
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+
+
+def test_not_found_lists_every_number_and_several_suggestions(utc):
+    result = LookupResult(
+        query="Acmee",
+        matches=[],
+        suggestions=[Suggestion("Acme Inc.", [1, 5], 0.9), Suggestion("Google", [2], 0.8)],
+    )
+    assert (
+        not_found_text(result).splitlines()[1] == "Did you mean: Acme Inc. (#1, #5), Google (#2)?"
+    )
+
+
+def test_not_found_without_suggestions_has_no_did_you_mean(utc):
+    assert not_found_text(find(lookup_store(), "Initech")).splitlines() == [
+        'No application found for "Initech".',
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("fields", "line"),
+    [
+        (
+            {"last_sync_complete": False, "pending": 230},
+            "Last sync: 2026-10-14 08:02 (incomplete — 230 emails pending; "
+            "run applytrail to continue)",
+        ),
+        (
+            {"last_sync_complete": False, "pending": 0},
+            "Last sync: 2026-10-14 08:02 (incomplete; run applytrail to continue)",
+        ),
+        ({"last_sync_at": None}, "No sync has run yet."),
+    ],
+)
+def test_not_found_last_sync_wording(utc, fields, line):
+    data = lookup_store()
+    for name, value in fields.items():
+        setattr(data.sync, name, value)
+    assert not_found_text(find(data, "Initech"), data).splitlines()[-1] == line
+
+
+def test_not_found_quotes_raw_input_literally():
+    result = LookupResult(query="[bold]x[/bold]", matches=[], suggestions=[])
+    assert not_found_text(result).splitlines()[0] == 'No application found for "[bold]x[/bold]".'
+
+
+def test_suggestion_company_is_not_markup():
+    result = LookupResult(
+        query="evl", matches=[], suggestions=[Suggestion("[bold]Evil[/bold]", [4], 0.8)]
+    )
+    assert not_found_text(result).splitlines()[1] == "Did you mean: [bold]Evil[/bold] (#4)?"

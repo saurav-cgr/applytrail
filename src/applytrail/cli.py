@@ -1,4 +1,5 @@
-"""`applytrail`: sync new mail, save, print the table (contracts/cli.md).
+"""`applytrail`: sync new mail, save, print the table; `check` looks up the saved store
+(contracts/cli.md).
 
 Expected failures print one line to stderr and exit with their code, never a stack trace
 (Principle VII). The table goes to stdout; progress and messages go to stderr.
@@ -12,7 +13,7 @@ from datetime import UTC, datetime
 from dotenv import find_dotenv, load_dotenv
 from rich.console import Console
 
-from applytrail import __version__, render, store
+from applytrail import __version__, lookup, render, store
 from applytrail.config import Settings, ensure_home
 from applytrail.errors import AppError, Interrupted
 
@@ -33,6 +34,11 @@ def main(argv: list[str] | None = None) -> int:
         "--offline", action="store_true", help="show saved data without contacting Gmail"
     )
     parser.add_argument("--version", action="version", version=f"applytrail {__version__}")
+    commands = parser.add_subparsers(dest="command", required=False)
+    check = commands.add_parser(
+        "check", help="check whether you already applied to a company (saved data only)"
+    )
+    check.add_argument("names", nargs="+", metavar="NAME", help="company name")
     args = parser.parse_args(argv)
 
     try:
@@ -47,6 +53,8 @@ def main(argv: list[str] | None = None) -> int:
     out = Console()
     err = Console(stderr=True)
     try:
+        if args.command == "check":
+            return _check_command(settings, out, args.names)
         if args.offline:
             return _offline_command(settings, out)
         return _sync_command(settings, out, err)
@@ -70,6 +78,20 @@ def _offline_command(settings: Settings, out: Console) -> int:
     render.render_table(data, out)
     render.render_last_sync(data.sync, out)
     return 0
+
+
+def _check_command(settings: Settings, out: Console, names: list[str]) -> int:
+    """Answer found (0) or not found (6) from the saved store; reads only, writes nothing."""
+    data = store.load(settings.store_path)
+    if not data.applications and data.sync.last_sync_at is None:
+        _message(NO_DATA_MESSAGE)
+        return 6
+    result = lookup.find(data, " ".join(names))  # InvalidInput exits 2 via main
+    if result.found:
+        render.render_found(result, data, out)
+        return 0
+    render.render_not_found(result, data, out)
+    return 6
 
 
 def _sync_command(settings: Settings, out: Console, err: Console) -> int:
