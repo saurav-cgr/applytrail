@@ -109,5 +109,5 @@ and after all of Q1–Q4 and Q7.
 | Q4 | `check acme` with an empty `APPLYTRAIL_HOME` | `No data yet. Run applytrail to sync.`; exit 6 |
 | Q4 | `COLUMNS=100 applytrail --offline` | 7 rows, `#` column visible, widest line 83 cells, no wrapped rows; `[bold]Evil[/bold]` printed literally (also literal in `check` and `open`, covered by tests) |
 | Q7 | `SSH_CONNECTION="127.0.0.1 1 127.0.0.1 22" applytrail open 1` | `Address for Acme Inc. — Backend Engineer (#1)` and the address; no browser; exit 0. Simulated with the variable that `ssh` sets, not a real `ssh localhost` session |
-| Q5 | Real Gmail sync, read `sync.mailbox` | **Pending user sign-off**: needs the user's mailbox |
-| Q6 | `applytrail open 1` with two Google accounts signed in (SC-005) | **Pending user sign-off**: needs the user's browser and accounts |
+| Q5 | Real Gmail sync, read `sync.mailbox` | Run by the user on 2026-10-15: the sync worked and saved the authorized address. **Pass** |
+| Q6 | `applytrail open 1` with two Google accounts signed in (SC-005) | Run by the user on 2026-10-15. **Fail, waived by the user**: the `u/<mailbox>/#all/<thread>` address showed Gmail's "account temporarily unavailable" page (numeric code 6446). The R8 fallback `?authuser=<mailbox>#all/<thread>` (and `#inbox/<thread>`) selected the right account but landed on `#all` (or `#inbox`) without opening the thread, which suggests Gmail's web view does not accept the API thread id. The user ruled that only one signed-in Google account is supported for now (DEBT-002) |

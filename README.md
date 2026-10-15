@@ -118,9 +118,9 @@ several applications, `open` lists them and asks for a number.
 Over SSH, or on Linux with no display, `open` prints `Address for …` and the address and starts
 no browser. If the browser cannot be started, it prints the address and a note.
 
-Links open in the Google account the data was synced from. Each sync asks Gmail which account
-the token belongs to, so this works when your browser is signed in to several Google accounts.
-Data saved before this version opens in the browser's first account until the next sync.
+Links name the Google account the data was synced from; each sync asks Gmail which account the
+token belongs to. Use a browser signed in to that one Google account. With several accounts
+signed in, Gmail can show an "account temporarily unavailable" page instead of the email.
 
 ## Environment variables
 
