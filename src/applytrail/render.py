@@ -45,9 +45,11 @@ def _new_table(store: Store, second: tuple[str, int], role_width: int) -> Table:
     return table
 
 
-def _add_row(table: Table, row: NumberedApplication, second: Text | str) -> None:
+def _add_row(
+    table: Table, row: NumberedApplication, second: Text | str, mailbox: str | None
+) -> None:
     app = row.app
-    link = links.thread_url(app.thread_id)
+    link = links.thread_url(app.thread_id, mailbox)
     table.add_row(
         Text(str(row.number)),
         second,
@@ -67,7 +69,7 @@ def build_table(store: Store, rows: list[NumberedApplication] | None = None) -> 
     for row in rows:
         key = row.app.key
         badge = "NEW" if key in added else "UPD" if key in updated else ""
-        _add_row(table, row, Text(badge, style="bold"))
+        _add_row(table, row, Text(badge, style="bold"), store.sync.mailbox)
     return table
 
 
@@ -75,7 +77,7 @@ def build_check_table(store: Store, rows: list[NumberedApplication]) -> Table:
     """The `check` table: First seen replaces the badge column; Role narrows (FR-004)."""
     table = _new_table(store, ("First seen", 10), role_width=21)
     for row in rows:
-        _add_row(table, row, _local_date(row.app.first_seen))
+        _add_row(table, row, _local_date(row.app.first_seen), store.sync.mailbox)
     return table
 
 

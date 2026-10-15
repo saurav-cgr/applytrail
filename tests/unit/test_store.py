@@ -180,3 +180,21 @@ def test_tmp_symlink_cannot_truncate_original(path, monkeypatch):
     with pytest.raises(OSError):
         store.save(Store.empty(), path)
     assert path.read_bytes() == original
+
+
+def test_store_without_mailbox_key_loads_with_none(path):
+    store.save(sample_store(), path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    del data["sync"]["mailbox"]
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert store.load(path).sync.mailbox is None
+
+
+def test_saving_same_mailbox_twice_is_byte_identical(path):
+    s = sample_store()
+    s.sync.mailbox = "me+jobs@example.com"
+    store.save(s, path)
+    first = path.read_bytes()
+    store.save(store.load(path), path)
+    assert path.read_bytes() == first
+    assert b'"mailbox": "me+jobs@example.com"' in first

@@ -10,8 +10,10 @@ GMAIL_THREAD_URL_TEMPLATE = "https://mail.google.com/mail/u/{account}/#all/{thre
 
 
 def thread_url(thread_id: str, mailbox: str | None = None) -> str:
-    """Address of one thread. Without a mailbox, Gmail's first signed-in account (`u/0`)."""
-    return GMAIL_THREAD_URL_TEMPLATE.format(account="0", thread_id=quote(thread_id, safe=""))
+    """Address of one thread in `mailbox`'s account, or Gmail's first signed-in account
+    (`u/0`) when no mailbox is known."""
+    account = "0" if mailbox is None else quote(mailbox, safe="@")
+    return GMAIL_THREAD_URL_TEMPLATE.format(account=account, thread_id=quote(thread_id, safe=""))
 
 
 def can_launch_browser(

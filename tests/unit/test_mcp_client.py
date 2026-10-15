@@ -16,7 +16,7 @@ from applytrail import gmail_auth, gmail_client, mcp_server
 from applytrail.config import Settings
 from applytrail.errors import AuthRequired, GmailError, GmailRateLimited, NetworkUnavailable
 from applytrail.mcp_client import GmailMcp
-from applytrail.models import EmailMeta, SearchPage
+from applytrail.models import AccountInfo, EmailMeta, SearchPage
 from tests.fakes import FakeGmailService, FakeMcpClient, load_fixture, raw_message
 
 AFTER = datetime(2026, 4, 15, tzinfo=UTC)
@@ -50,7 +50,7 @@ def in_process(settings):
 
 
 def test_same_method_signatures_as_fake():
-    for name in ("search_job_emails", "get_email"):
+    for name in ("search_job_emails", "get_email", "get_account"):
         real = inspect.signature(getattr(GmailMcp, name))
         fake = inspect.signature(getattr(FakeMcpClient, name))
         assert list(real.parameters) == list(fake.parameters)
@@ -138,3 +138,37 @@ def test_real_stdio_server_without_token(settings):
 def test_calls_outside_context_fail(settings):
     with pytest.raises(RuntimeError):
         GmailMcp(settings).get_email("m1")
+
+
+# --- get_account (002 US3) --------------------------------------------------------------------
+
+
+def test_get_account_is_typed(settings, gmail):
+    gmail.service = FakeGmailService(email="me+jobs@example.com")
+    with in_process(settings) as mcp:
+        account = mcp.get_account()
+    assert account == AccountInfo(email_address="me+jobs@example.com")
+
+
+def test_get_account_auth_required(settings, gmail, monkeypatch):
+    def missing(s):
+        raise AuthRequired()
+
+    monkeypatch.setattr(gmail_auth, "load_credentials", missing)
+    with in_process(settings) as mcp, pytest.raises(AuthRequired):
+        mcp.get_account()
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        (socket.gaierror("no route"), NetworkUnavailable),
+        (HttpError(httplib2.Response({"status": 429}), b"{}"), GmailRateLimited),
+        (HttpError(httplib2.Response({"status": 503}), b"{}"), GmailError),
+    ],
+    ids=["network", "rate-limited", "gmail-error"],
+)
+def test_get_account_errors_map_back(settings, gmail, error, expected):
+    gmail.service = FakeGmailService(profile_error=error)
+    with in_process(settings) as mcp, pytest.raises(expected):
+        mcp.get_account()

@@ -196,44 +196,44 @@ model.
 
 ### Tests first (write, run, see them fail)
 
-- [ ] T030 [US3] Extend the test fakes in `tests/fakes.py` (test infrastructure, needed by T031–T036):
+- [x] T030 [US3] Extend the test fakes in `tests/fakes.py` (test infrastructure, needed by T031–T036):
   - `FakeMcpClient.get_account()` returns `AccountInfo(email_address=self.account)`, where `account` is a new constructor argument defaulting to `"me@example.com"`. It records the call and can be configured to raise an `AppError`.
   - `FakeGmailService.users().getProfile(userId="me")` returns a `FakeGmailRequest` with `{"emailAddress": ...}` or a configured error.
-- [ ] T031 [P] [US3] Add failing model tests to `tests/unit/test_models.py` and `tests/unit/test_store.py` (data-model.md):
+- [x] T031 [P] [US3] Add failing model tests to `tests/unit/test_models.py` and `tests/unit/test_store.py` (data-model.md):
   - `SyncState.mailbox` defaults to `None`.
   - Validation is "3–254 characters, exactly one `@`, no whitespace or control characters". Reject `"a"`, `"a@b@c"`, `"me @x.com"`, `"me\n@x.com"`, and a 255-character value. Accept `me+jobs@example.com`.
   - `AccountInfo.email_address` uses the same rule.
   - A store JSON without the `mailbox` key loads with `None`.
   - Saving twice with the same mailbox gives byte-identical files.
-- [ ] T032 [P] [US3] Add failing tests to `tests/unit/test_links.py`: `thread_url("18c0aa01", "me+jobs@example.com")` equals `https://mail.google.com/mail/u/me%2Bjobs@example.com/#all/18c0aa01` (mailbox encoded with `quote(mailbox, safe="@")`), and `mailbox=None` still gives `u/0`.
-- [ ] T033 [P] [US3] Add failing tests to `tests/unit/test_gmail_client.py`: `gmail_client.get_account(service)` calls `users().getProfile(userId="me")` and returns `AccountInfo`. HTTP 429 → `GmailRateLimited`, HTTP 500 → `GmailError(500)`, `OSError` → `NetworkUnavailable`, all through `_mapped_errors`.
-- [ ] T034 [P] [US3] Update `tests/contract/test_mcp_tools.py` and add failing tests:
+- [x] T032 [P] [US3] Add failing tests to `tests/unit/test_links.py`: `thread_url("18c0aa01", "me+jobs@example.com")` equals `https://mail.google.com/mail/u/me%2Bjobs@example.com/#all/18c0aa01` (mailbox encoded with `quote(mailbox, safe="@")`), and `mailbox=None` still gives `u/0`.
+- [x] T033 [P] [US3] Add failing tests to `tests/unit/test_gmail_client.py`: `gmail_client.get_account(service)` calls `users().getProfile(userId="me")` and returns `AccountInfo`. HTTP 429 → `GmailRateLimited`, HTTP 500 → `GmailError(500)`, `OSError` → `NetworkUnavailable`, all through `_mapped_errors`.
+- [x] T034 [P] [US3] Update `tests/contract/test_mcp_tools.py` and add failing tests:
   - Both tool-set assertions (currently around lines 73 and 259) become `{"search_job_emails", "get_email", "get_account"}`.
   - `get_account` takes no arguments and returns `structured_content == {"email_address": "me@example.com"}`.
   - Missing auth → `is_error` with text starting `AUTH_REQUIRED:`.
   - The tool has a docstring description.
   - No listed tool name contains any of the `FORBIDDEN` words.
-- [ ] T035 [P] [US3] Add failing tests to `tests/unit/test_mcp_client.py`: `GmailMcp.get_account()` (in-process server) returns `AccountInfo`, and the error prefixes map to the same typed errors as the other tools.
-- [ ] T036 [P] [US3] Add failing integration tests to `tests/integration/test_sync_first_run.py` and `tests/integration/test_sync_incremental.py`:
+- [x] T035 [P] [US3] Add failing tests to `tests/unit/test_mcp_client.py`: `GmailMcp.get_account()` (in-process server) returns `AccountInfo`, and the error prefixes map to the same typed errors as the other tools.
+- [x] T036 [P] [US3] Add failing integration tests to `tests/integration/test_sync_first_run.py` and `tests/integration/test_sync_incremental.py`:
   - A first sync saves `sync.mailbox == "me@example.com"`.
   - `get_account` is called exactly once per run, before `search_job_emails`.
   - A re-run with no new mail and the same account leaves the store unchanged apart from `last_sync_at` (reuse the existing checksum helper).
   - A run with a different account replaces the mailbox.
   - `get_account` raising `AuthRequired` stops the run as a search failure would, leaving the existing mailbox untouched.
-- [ ] T037 [P] [US3] Add failing tests to `tests/unit/test_render.py` and `tests/unit/test_cli.py`:
+- [x] T037 [P] [US3] Add failing tests to `tests/unit/test_render.py` and `tests/unit/test_cli.py`:
   - With `store.sync.mailbox = "me+jobs@example.com"`, the table's Company `href` and `open 1 --print`'s address both use `u/me%2Bjobs@example.com`.
   - Without a mailbox, both use `u/0`.
   - The mailbox never appears in stderr output or in `debug.log`.
 
 ### Implementation
 
-- [ ] T038 [US3] Add `mailbox: str | None = None` to `SyncState` and a new `AccountInfo(email_address: str)` model in `src/applytrail/models.py`. Both share one validator: "3–254 characters, exactly one `@`, no whitespace or control characters". `schema_version` stays `1`. Make T031 pass.
-- [ ] T039 [US3] Add `get_account(service) -> AccountInfo` (inside `_mapped_errors`, `execute(num_retries=NUM_RETRIES)`) to `src/applytrail/gmail_client.py`. Update the module docstring to list `users().getProfile` alongside `messages().list` and `messages().get`. Make T033 pass.
-- [ ] T040 [US3] Add the `get_account` tool to `src/applytrail/mcp_server.py`: `@server.tool`, no arguments, returns `AccountInfo`, wrapped in `_call`, with the docstring "Return the address of the Gmail account this server reads, so links can open the right mailbox." Never log the address. Make T034 pass.
-- [ ] T041 [US3] Add `get_account() -> AccountInfo` to `GmailMcp` in `src/applytrail/mcp_client.py` using `_call("get_account", {})`. Make T035 pass.
-- [ ] T042 [US3] Add `get_account()` to the `MailSource` protocol in `src/applytrail/sync.py`. In `run_sync`, inside the existing `try` and before `_candidates`, set `store.sync.mailbox = mcp.get_account().email_address`. Don't reset it with the badges. Make T036 pass.
-- [ ] T043 [US3] Pass `store.sync.mailbox` to `links.thread_url` in `render.build_table` (`src/applytrail/render.py`) and in `_open_command` (`src/applytrail/cli.py`). Make T037 pass.
-- [ ] T044 [US3] Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `feat(us3): open threads in the synced Google account`.
+- [x] T038 [US3] Add `mailbox: str | None = None` to `SyncState` and a new `AccountInfo(email_address: str)` model in `src/applytrail/models.py`. Both share one validator: "3–254 characters, exactly one `@`, no whitespace or control characters". `schema_version` stays `1`. Make T031 pass.
+- [x] T039 [US3] Add `get_account(service) -> AccountInfo` (inside `_mapped_errors`, `execute(num_retries=NUM_RETRIES)`) to `src/applytrail/gmail_client.py`. Update the module docstring to list `users().getProfile` alongside `messages().list` and `messages().get`. Make T033 pass.
+- [x] T040 [US3] Add the `get_account` tool to `src/applytrail/mcp_server.py`: `@server.tool`, no arguments, returns `AccountInfo`, wrapped in `_call`, with the docstring "Return the address of the Gmail account this server reads, so links can open the right mailbox." Never log the address. Make T034 pass.
+- [x] T041 [US3] Add `get_account() -> AccountInfo` to `GmailMcp` in `src/applytrail/mcp_client.py` using `_call("get_account", {})`. Make T035 pass.
+- [x] T042 [US3] Add `get_account()` to the `MailSource` protocol in `src/applytrail/sync.py`. In `run_sync`, inside the existing `try` and before `_candidates`, set `store.sync.mailbox = mcp.get_account().email_address`. Don't reset it with the badges. Make T036 pass.
+- [x] T043 [US3] Pass `store.sync.mailbox` to `links.thread_url` in `render.build_table` (`src/applytrail/render.py`) and in `_open_command` (`src/applytrail/cli.py`). Make T037 pass.
+- [x] T044 [US3] Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `feat(us3): open threads in the synced Google account`.
 
 **Checkpoint**: All three stories work, and links target the synced account.
 

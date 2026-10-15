@@ -20,6 +20,20 @@ def _to_utc(value: datetime) -> datetime:
 
 UtcDatetime = Annotated[AwareDatetime, AfterValidator(_to_utc)]
 
+
+def _check_mailbox(value: str) -> str:
+    """3–254 characters, exactly one `@`, no whitespace or control characters."""
+    if not 3 <= len(value) <= 254:
+        raise ValueError("mailbox must be 3 to 254 characters")
+    if value.count("@") != 1:
+        raise ValueError("mailbox must contain exactly one @")
+    if any(c.isspace() or not c.isprintable() for c in value):
+        raise ValueError("mailbox must not contain whitespace or control characters")
+    return value
+
+
+Mailbox = Annotated[str, AfterValidator(_check_mailbox)]
+
 _LABELS = {
     "applied": "Applied",
     "in_review": "In Review",
@@ -96,6 +110,12 @@ class SearchPage(BaseModel):
     query: str
 
 
+class AccountInfo(BaseModel):
+    """The synced Gmail account, from the MCP `get_account` tool (data-model.md)."""
+
+    email_address: Mailbox
+
+
 class Application(BaseModel):
     key: str
     company: str
@@ -134,6 +154,7 @@ class SyncState(BaseModel):
     added: list[str] = Field(default_factory=list)
     updated: list[str] = Field(default_factory=list)
     last_run_counts: RunCounts = Field(default_factory=RunCounts)
+    mailbox: Mailbox | None = None  # the synced account; not reset with the badges
 
     @model_validator(mode="after")
     def _complete_has_nothing_pending(self) -> "SyncState":

@@ -117,7 +117,7 @@ def _open_command(settings: Settings, out: Console, targets: list[str], print_on
             _message(f'Several applications match "{target.query}". Run: applytrail open <number>')
             return 2
         target = target.matches[0]
-    url = links.thread_url(target.app.thread_id)
+    url = links.thread_url(target.app.thread_id, data.sync.mailbox)
     launching = not print_only and links.can_launch_browser()
     render.render_open(target, url, launching, out)
     if launching and not links.open_in_browser(url):

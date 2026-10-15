@@ -878,3 +878,50 @@ def test_open_row_with_many_leading_zeros(opener, capsys):
 
     out, _ = capsys.readouterr()
     assert out.splitlines()[0] == "Address for Google — Software Engineer (#2)"
+
+
+# --- synced mailbox (US3, T037) ------------------------------------------------------------------
+
+
+def test_open_print_uses_the_synced_mailbox(offline, capsys):
+    from tests.fakes import load_store_fixture
+
+    lookup_data = load_store_fixture("store_lookup.json")
+    lookup_data.sync.mailbox = "me+jobs@example.com"
+    write_store(offline.settings, lookup_data)
+
+    assert cli.main(["open", "1", "--print"]) == 0
+
+    out, err = capsys.readouterr()
+    assert out.splitlines()[1] == (
+        "https://mail.google.com/mail/u/me%2Bjobs@example.com/#all/18c0aa01"
+    )
+    assert "me+jobs" not in err
+
+
+def test_open_print_without_mailbox_uses_u0(opener, capsys):
+    assert cli.main(["open", "1", "--print"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[1] == "https://mail.google.com/mail/u/0/#all/18c0aa01"
+
+
+def test_mailbox_never_reaches_stderr_or_the_debug_log(harness, capsys, monkeypatch):
+    monkeypatch.setenv("APPLYTRAIL_DEBUG", "1")
+    assert cli.main([]) == 0
+    _, err = capsys.readouterr()
+    assert "me@example.com" not in err
+    assert saved_store(harness.settings).sync.mailbox == "me@example.com"
+
+    address = saved_store(harness.settings).sync.mailbox
+
+    def behaviour(data, on_progress):
+        raise RuntimeError(f"failed for {address}")
+
+    harness.sync_behaviour = behaviour
+    assert cli.main([]) == 1
+
+    _, err = capsys.readouterr()
+    log = harness.settings.debug_log_path.read_text(encoding="utf-8")
+    assert "me@example.com" not in err
+    assert "me@example.com" not in log

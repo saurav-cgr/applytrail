@@ -9,9 +9,9 @@ from googleapiclient.errors import HttpError
 
 from applytrail import gmail_client
 from applytrail.errors import GmailError, GmailRateLimited, NetworkUnavailable
-from applytrail.models import EmailMeta, SearchPage
+from applytrail.models import AccountInfo, EmailMeta, SearchPage
+from tests.fakes import FakeGmailRequest, b64, load_fixture, raw_message
 from tests.fakes import FakeGmailService as FakeService
-from tests.fakes import b64, load_fixture, raw_message
 
 AFTER = datetime(2026, 4, 15, 0, 0, tzinfo=UTC)
 
@@ -254,3 +254,51 @@ def test_gmail_error_carries_status():
     with pytest.raises(GmailError) as info:
         gmail_client.get_email(service, "m1")
     assert info.value.status == 503
+
+
+# --- get_account (002 US3, research R7) -------------------------------------------------------
+
+
+def test_get_account_reads_the_profile():
+    service = FakeService(email="me+jobs@example.com")
+    account = gmail_client.get_account(service)
+    assert account == AccountInfo(email_address="me+jobs@example.com")
+    assert service.calls == [("getProfile", {"userId": "me"})]
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    [
+        (http_error(429), GmailRateLimited),
+        (http_error(500), GmailError),
+        (OSError("down"), NetworkUnavailable),
+    ],
+    ids=["429", "500", "oserror"],
+)
+def test_get_account_errors_are_mapped(error, expected):
+    with pytest.raises(expected) as info:
+        gmail_client.get_account(FakeService(profile_error=error))
+    if expected is GmailError:
+        assert info.value.status == 500
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        {"emailAddress": "private+jobs@example.com\n"},
+        {"emailAddress": "no-at-sign"},
+        {"emailAddress": 42},
+        {},
+    ],
+    ids=["newline", "no-at", "not-a-string", "missing"],
+)
+def test_get_account_malformed_profile_is_a_safe_gmail_error(profile):
+    # V-009: a rejected address must not ride along in the error or its context.
+    service = FakeService()
+    service.getProfile = lambda **kwargs: FakeGmailRequest(profile)
+    with pytest.raises(GmailError) as info:
+        gmail_client.get_account(service)
+    assert info.value.status == "unknown"
+    assert info.value.__cause__ is None
+    assert info.value.__suppress_context__ is True
+    assert "private" not in str(info.value)

@@ -14,6 +14,7 @@ from applytrail.config import FIRST_RUN_LOOKBACK_DAYS, OVERLAP, SAVE_EVERY, Sett
 from applytrail.errors import AppError, ExtractionInvalid, GmailRateLimited, ProviderUnavailable
 from applytrail.extractor import Extractor
 from applytrail.models import (
+    AccountInfo,
     EmailMeta,
     MessageRef,
     ProcessedEmail,
@@ -30,6 +31,8 @@ class MailSource(Protocol):
     def search_job_emails(self, after: datetime, page_token: str | None = None) -> SearchPage: ...
 
     def get_email(self, message_id: str) -> EmailMeta: ...
+
+    def get_account(self) -> AccountInfo: ...
 
 
 def run_sync(
@@ -55,6 +58,8 @@ def run_sync(
     tracker = merge.BadgeTracker.begin(store)
     store.sync.added, store.sync.updated = [], []
     try:
+        # The synced account; kept across runs (not reset with the badges) and never logged.
+        store.sync.mailbox = mcp.get_account().email_address
         candidates = _candidates(store, mcp, now)
         total = len(candidates)
         progress(0, total)

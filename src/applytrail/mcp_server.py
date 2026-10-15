@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from applytrail import gmail_auth, gmail_client
 from applytrail.config import BODY_MAX_CHARS, Settings
 from applytrail.errors import AuthRequired, GmailError, GmailRateLimited, NetworkUnavailable
-from applytrail.models import EmailMeta, SearchPage
+from applytrail.models import AccountInfo, EmailMeta, SearchPage
 
 M = TypeVar("M", bound=BaseModel)
 
@@ -53,6 +53,13 @@ def get_email(
     `truncated` is true when the body was cut to `max_chars`.
     """
     return _call(lambda: gmail_client.get_email(_service(), message_id, max_chars))
+
+
+@server.tool
+def get_account() -> AccountInfo:
+    """Return the address of the Gmail account this server reads, so links can open the right mailbox."""  # noqa: E501
+    # The address is never logged (data-model.md SyncState.mailbox).
+    return _call(lambda: gmail_client.get_account(_service()))
 
 
 def _service() -> Any:

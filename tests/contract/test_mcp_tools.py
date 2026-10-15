@@ -68,14 +68,21 @@ def error_text(result):
 # --- listing and schemas ----------------------------------------------------------------------
 
 
-def test_exactly_two_read_tools_with_descriptions():
+READ_TOOLS = {"search_job_emails", "get_email", "get_account"}
+
+
+def test_exactly_three_read_tools_with_descriptions():
     listed = tools()
-    assert set(listed) == {"search_job_emails", "get_email"}
+    assert set(listed) == READ_TOOLS
     assert listed["search_job_emails"].description.startswith(
         "List IDs of likely job-application emails received after a given time, oldest first."
     )
     assert listed["get_email"].description.startswith(
         "Fetch one email's headers and plain-text body, truncated for safe processing."
+    )
+    assert listed["get_account"].description == (
+        "Return the address of the Gmail account this server reads, so links can open the "
+        "right mailbox."
     )
 
 
@@ -256,7 +263,57 @@ def test_stdio_server_without_token_reports_auth_required(tmp_path):
             return names, result
 
     names, result = anyio.run(main)
-    assert names == {"search_job_emails", "get_email"}
+    assert names == READ_TOOLS
     assert error_text(result) == (
         "AUTH_REQUIRED: Gmail access not set up or expired. Run applytrail-auth."
     )
+
+
+# --- get_account (002 US3) --------------------------------------------------------------------
+
+
+def test_get_account_takes_no_arguments():
+    schema = tools()["get_account"].input_schema
+    assert schema.get("properties", {}) == {}
+    assert schema.get("required", []) == []
+
+
+def test_get_account_structured_content(gmail):
+    result = call("get_account", {})
+    assert result.is_error is False
+    assert result.structured_content == {"email_address": "me@example.com"}
+    assert gmail.service.calls == [("getProfile", {"userId": "me"})]
+
+
+def test_get_account_without_auth_is_auth_required(gmail, monkeypatch):
+    def missing(settings):
+        raise AuthRequired()
+
+    monkeypatch.setattr(gmail_auth, "load_credentials", missing)
+    assert error_text(call("get_account", {})).startswith("AUTH_REQUIRED:")
+
+
+def test_get_account_never_logs_the_address(gmail, caplog, capfd):
+    gmail.service = FakeGmailService(email="secret+jobs@example.com")
+    with caplog.at_level("DEBUG"):
+        call("get_account", {})
+        gmail.service = FakeGmailService(
+            email="secret+jobs@example.com",
+            profile_error=HttpError(httplib2.Response({"status": 503}), b"{}"),
+        )
+        call("get_account", {})
+    captured = capfd.readouterr()
+    assert "secret" not in caplog.text
+    assert "secret" not in captured.out + captured.err
+
+
+def test_get_account_rejected_address_is_never_logged(gmail, caplog, capfd):
+    # V-009: FastMCP logs tool exceptions with their traceback; a validation error carried the
+    # rejected address in its input_value.
+    gmail.service = FakeGmailService(email="secret+jobs@example.com\n")
+    with caplog.at_level("DEBUG"):
+        result = call("get_account", {})
+    captured = capfd.readouterr()
+    assert error_text(result) == "GMAIL_ERROR: HTTP unknown"
+    assert "secret" not in caplog.text
+    assert "secret" not in captured.out + captured.err

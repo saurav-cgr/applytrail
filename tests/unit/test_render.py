@@ -441,3 +441,24 @@ def test_open_address_is_never_broken_across_lines():
 def test_open_company_is_not_markup():
     evil = numbered(lookup_store())[3]
     assert open_lines(evil, launching=True)[0] == "Opening [bold]Evil[/bold] — Engineer (#4)"
+
+
+# --- synced mailbox links (T037) ---
+
+
+def test_company_link_uses_the_synced_mailbox():
+    data = store_with(app(thread="18c0aa01"))
+    data.sync.mailbox = "me+jobs@example.com"
+    out = console()
+    render_table(data, out)
+    html = out.export_html()
+    assert 'href="https://mail.google.com/mail/u/me%2Bjobs@example.com/#all/18c0aa01"' in html
+    assert "/u/0/" not in html
+
+
+def test_check_table_link_uses_the_synced_mailbox():
+    data = lookup_store()
+    data.sync.mailbox = "me+jobs@example.com"
+    out = console()
+    render_found(find(data, "google"), data, out)
+    assert "mail/u/me%2Bjobs@example.com/#all/18c0aa02" in out.export_html()

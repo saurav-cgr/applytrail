@@ -1,6 +1,8 @@
-"""Gmail API calls behind the MCP server: search and fetch only (FR-002, research R4).
+"""Gmail API calls behind the MCP server: search, fetch and account lookup only (FR-002,
+research R4, 002 research R7).
 
-Only `users().messages().list` and `users().messages().get` are ever called.
+Only `users().messages().list`, `users().messages().get` and `users().getProfile` are ever
+called.
 """
 
 import base64
@@ -15,10 +17,11 @@ import httplib2
 from google.auth.exceptions import TransportError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from pydantic import ValidationError
 
 from applytrail.config import BODY_MAX_CHARS
 from applytrail.errors import GmailError, GmailRateLimited, NetworkUnavailable
-from applytrail.models import EmailMeta, MessageRef, SearchPage
+from applytrail.models import AccountInfo, EmailMeta, MessageRef, SearchPage
 
 # Gmail search syntax: `{a b c}` matches any of the terms. Braces are doubled for str.format.
 SEARCH_QUERY_TEMPLATE = (
@@ -93,6 +96,18 @@ def get_email(service: Any, message_id: str, max_chars: int = BODY_MAX_CHARS) ->
         body_text=text[:max_chars],
         truncated=truncated,
     )
+
+
+def get_account(service: Any) -> AccountInfo:
+    """The address of the account the token belongs to, so links open the right mailbox."""
+    with _mapped_errors():
+        profile = service.users().getProfile(userId="me").execute(num_retries=NUM_RETRIES)
+    try:
+        return AccountInfo(email_address=profile["emailAddress"])
+    except (KeyError, TypeError, ValidationError):
+        # The rejected value is the address itself, so drop the original error: its text and
+        # traceback would put the address in a log.
+        raise GmailError("unknown") from None
 
 
 @contextmanager

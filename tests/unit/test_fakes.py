@@ -8,6 +8,7 @@ from applytrail.errors import AuthRequired, ExtractionInvalid, ProviderUnavailab
 from applytrail.models import Extraction, SearchPage
 from tests.fakes import (
     FakeExtractor,
+    FakeGmailService,
     FakeMcpClient,
     email_meta,
     load_fixture,
@@ -88,3 +89,29 @@ def test_store_lookup_fixture_loads():
     data = load_store_fixture("store_lookup.json")
     assert len(data.applications) == 7
     assert "mailbox" not in load_fixture("store_lookup.json")["sync"]
+
+
+def test_mcp_get_account_is_recorded_outside_calls():
+    mcp = FakeMcpClient(load_fixtures(), account="me+jobs@example.com")
+    assert mcp.get_account().email_address == "me+jobs@example.com"
+    mcp.search_job_emails(EPOCH)
+    mcp.get_account()
+    assert mcp.account_calls == [0, 1]
+    assert [c[0] for c in mcp.calls] == ["search_job_emails"]
+
+
+def test_mcp_get_account_raises_on_demand():
+    mcp = FakeMcpClient(load_fixtures(), account_error=AuthRequired())
+    with pytest.raises(AuthRequired):
+        mcp.get_account()
+
+
+def test_gmail_service_get_profile():
+    service = FakeGmailService(email="me+jobs@example.com")
+    assert service.users().getProfile(userId="me").execute() == {
+        "emailAddress": "me+jobs@example.com"
+    }
+    assert service.calls == [("getProfile", {"userId": "me"})]
+    failing = FakeGmailService(profile_error=OSError("down"))
+    with pytest.raises(OSError):
+        failing.users().getProfile(userId="me").execute()

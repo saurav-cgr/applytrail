@@ -54,3 +54,13 @@ def test_open_in_browser_false_when_webbrowser_raises(monkeypatch):
 
     monkeypatch.setattr(links.webbrowser, "open", boom)
     assert open_in_browser("https://example.invalid") is False
+
+
+def test_thread_url_uses_the_synced_mailbox():
+    assert thread_url("18c0aa01", "me+jobs@example.com") == (
+        "https://mail.google.com/mail/u/me%2Bjobs@example.com/#all/18c0aa01"
+    )
+
+
+def test_thread_url_without_mailbox_is_u0():
+    assert thread_url("18c0aa01", None) == "https://mail.google.com/mail/u/0/#all/18c0aa01"

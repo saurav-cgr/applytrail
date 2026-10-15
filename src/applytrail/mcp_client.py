@@ -1,4 +1,4 @@
-"""The CLI side of the MCP protocol: spawn `applytrail-mcp` over stdio and wrap its two tools.
+"""The CLI side of the MCP protocol: spawn `applytrail-mcp` over stdio and wrap its three tools.
 
 The rest of the CLI is synchronous, so the async-only `fastmcp.Client` runs in an anyio blocking
 portal (an event loop on a helper thread) for the lifetime of the context manager.
@@ -25,7 +25,7 @@ from applytrail.errors import (
     GmailRateLimited,
     NetworkUnavailable,
 )
-from applytrail.models import EmailMeta, SearchPage
+from applytrail.models import AccountInfo, EmailMeta, SearchPage
 
 _GMAIL_STATUS = re.compile(r"^GMAIL_ERROR: HTTP (\d{3})\b")
 
@@ -77,6 +77,10 @@ class GmailMcp:
     def get_email(self, message_id: str) -> EmailMeta:
         result = self._call("get_email", {"message_id": message_id})
         return EmailMeta.model_validate(result.structured_content)
+
+    def get_account(self) -> AccountInfo:
+        result = self._call("get_account", {})
+        return AccountInfo.model_validate(result.structured_content)
 
     def _call(self, name: str, arguments: dict[str, Any]) -> CallToolResult:
         if self._portal is None or self._client is None:
