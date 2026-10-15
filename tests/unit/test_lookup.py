@@ -1,5 +1,6 @@
 """Row numbers, lookup and suggestions (T004, T012, T013; research R3–R5)."""
 
+import time
 from datetime import UTC, datetime
 
 import pytest
@@ -355,3 +356,42 @@ def test_resolve_leading_zeros_pick_the_row(target):
 def test_resolve_all_zeros_is_out_of_range():
     with pytest.raises(InvalidInput):
         resolve(lookup_store(), ["0" * 4500])
+
+
+# --- Performance (T045, SC-002) ----------------------------------------------------------------
+
+
+PERF_ROWS = 500
+PERF_LIMIT_SECONDS = 1.0
+
+
+def perf_store(n: int) -> Store:
+    data = Store.empty()
+    for i in range(n):
+        company = "Acme Inc." if i % 50 == 0 else f"Company {i:03d} Holdings"
+        role = f"Engineer {i}"
+        a = app(company, role, 1 + i % 28)
+        data.applications[a.key] = a
+    return data
+
+
+@pytest.mark.parametrize(
+    "action",
+    [
+        lambda data: numbered(data),
+        lambda data: find(data, "acme"),
+        lambda data: find(data, "zzzz"),
+        lambda data: resolve(data, ["250"]),
+    ],
+    ids=["numbered", "find-hit", "find-miss", "resolve-number"],
+)
+def test_lookup_on_500_applications_is_under_a_second(action):
+    data = perf_store(PERF_ROWS)
+    assert len(data.applications) == PERF_ROWS
+
+    started = time.perf_counter()
+    result = action(data)
+    elapsed = time.perf_counter() - started
+
+    assert result is not None
+    assert elapsed < PERF_LIMIT_SECONDS, f"{elapsed:.3f} s for {PERF_ROWS} applications"

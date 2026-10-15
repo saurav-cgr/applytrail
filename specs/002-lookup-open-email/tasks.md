@@ -241,8 +241,8 @@ model.
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] T045 [P] Add a performance test (SC-002) to `tests/unit/test_lookup.py`, modelled on `tests/unit/test_render_perf.py`: a generated 500-application store runs `numbered`, `find("acme")`, `find("zzzz")` (worst case, with suggestions) and `resolve(["250"])`, each under 1 s.
-- [ ] T046 [P] Update `README.md`:
+- [x] T045 [P] Add a performance test (SC-002) to `tests/unit/test_lookup.py`, modelled on `tests/unit/test_render_perf.py`: a generated 500-application store runs `numbered`, `find("acme")`, `find("zzzz")` (worst case, with suggestions) and `resolve(["250"])`, each under 1 s.
+- [x] T046 [P] Update `README.md`:
   - `applytrail check NAME...` and `applytrail open TARGET... [--print]` with examples.
   - Row numbers can change after a sync, and `open` always names what it opens.
   - Exit codes 0/2/6 for `check`/`open`.
@@ -250,9 +250,9 @@ model.
   - Multi-account links use the synced account, which is detected at each sync.
   - The MCP tools list gains `get_account`.
   - The `#` table column.
-- [ ] T047 [P] Update `AGENTS.md` rule 1 and the Project paragraph so the MCP read tools are listed as `search_job_emails`, `get_email`, `get_account`.
-- [ ] T048 Run quickstart scenarios Q1–Q4 and Q7 from `specs/002-lookup-open-email/quickstart.md` and append a `## Results` section with date, command and observed outcome for each. Mark Q5 and Q6 (real Gmail, two browser accounts) as **pending user sign-off**: they need the user's mailbox and browser.
-- [ ] T049 Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `docs: document check and open commands`.
+- [x] T047 [P] Update `AGENTS.md` rule 1 and the Project paragraph so the MCP read tools are listed as `search_job_emails`, `get_email`, `get_account`.
+- [x] T048 Run quickstart scenarios Q1–Q4 and Q7 from `specs/002-lookup-open-email/quickstart.md` and append a `## Results` section with date, command and observed outcome for each. Mark Q5 and Q6 (real Gmail, two browser accounts) as **pending user sign-off**: they need the user's mailbox and browser.
+- [x] T049 Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `docs: document check and open commands`.
 
 ---
 

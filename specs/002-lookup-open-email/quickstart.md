@@ -86,3 +86,28 @@ ssh localhost 'cd ~/projects/applytrail && uv run applytrail open 1'
 ```
 
 Expected: `Address for …` plus the address, no browser and no console browser starts, exit 0.
+
+## Results
+
+Run 2026-10-15 on branch `002-lookup-open-email` (after `feat(us3)`), with a scratch
+`APPLYTRAIL_HOME` holding a copy of `tests/fixtures/store_lookup.json`. `BROWSER=/usr/bin/true`
+was set for every run, so no real browser could start. The store's SHA-256 was the same before
+and after all of Q1–Q4 and Q7.
+
+| Scenario | Command | Observed |
+|---|---|---|
+| Q1 | `applytrail check acme` | `Found 2 applications matching "acme":`, rows #1 and #5, columns `#, First seen, Company, Role, Status, Last seen`; exit 0 |
+| Q1 | `applytrail check "Acme, Inc."` | Same 2 rows; exit 0 |
+| Q1 | `applytrail check glob` | `Found 1 application matching "glob":`, Globex International (#3); exit 0 |
+| Q1 | `applytrail check lob` | `No application found for "lob".`, `Last sync: 2026-10-14 13:32 (complete)`; exit 6 |
+| Q1 | `applytrail check Gogle` | Not found, then `Did you mean: Google (#2)?` and the Last sync line; exit 6 |
+| Q1 | `applytrail check "&"` | `Enter a company name, for example: applytrail check acme`; exit 2 |
+| Q2 | `applytrail --offline`, `check globex`, `open globex --print` | Globex is #3 in all three; `Address for Globex International — Unknown (#3)` and `https://mail.google.com/mail/u/0/#all/18c0aa03`; exit 0 |
+| Q3 | `applytrail open 2 --print` | `Address for Google — Software Engineer (#2)` and the `u/0` address; exit 0; no browser |
+| Q3 | `applytrail open 99` | `No row 99. Choose a number from 1 to 7 (see applytrail --offline).`; exit 2 |
+| Q3 | `applytrail open acme` | `check` table with rows #1 and #5, then `Several applications match "acme". Run: applytrail open <number>`; exit 2 |
+| Q4 | `check acme` with an empty `APPLYTRAIL_HOME` | `No data yet. Run applytrail to sync.`; exit 6 |
+| Q4 | `COLUMNS=100 applytrail --offline` | 7 rows, `#` column visible, widest line 83 cells, no wrapped rows; `[bold]Evil[/bold]` printed literally (also literal in `check` and `open`, covered by tests) |
+| Q7 | `SSH_CONNECTION="127.0.0.1 1 127.0.0.1 22" applytrail open 1` | `Address for Acme Inc. — Backend Engineer (#1)` and the address; no browser; exit 0. Simulated with the variable that `ssh` sets, not a real `ssh localhost` session |
+| Q5 | Real Gmail sync, read `sync.mailbox` | **Pending user sign-off**: needs the user's mailbox |
+| Q6 | `applytrail open 1` with two Google accounts signed in (SC-005) | **Pending user sign-off**: needs the user's browser and accounts |
