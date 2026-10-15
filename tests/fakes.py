@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from applytrail.errors import AppError, ExtractionInvalid, ProviderUnavailable
-from applytrail.models import EmailMeta, Extraction, MessageRef, SearchPage
+from applytrail.models import EmailMeta, Extraction, MessageRef, SearchPage, Store
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -20,10 +20,16 @@ def load_fixture(name: str) -> dict:
 
 
 def load_fixtures(*names: str) -> list[dict]:
-    """Load the named fixtures, or every fixture when no name is given."""
+    """Load the named fixtures, or every email fixture when no name is given."""
     if names:
         return [load_fixture(n) for n in names]
-    return [load_fixture(p.name) for p in sorted(FIXTURES.glob("*.json"))]
+    paths = sorted(p for p in FIXTURES.glob("*.json") if not p.name.startswith("store_"))
+    return [load_fixture(p.name) for p in paths]
+
+
+def load_store_fixture(name: str) -> Store:
+    """Load a whole store fixture (`store_*.json`) as a validated `Store`."""
+    return Store.model_validate(load_fixture(name))
 
 
 def email_meta(fixture: dict) -> EmailMeta:

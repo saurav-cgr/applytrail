@@ -8,9 +8,11 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from applytrail.models import Application, RunCounts, Status, Store, SyncState
+from applytrail import links
+from applytrail.lookup import NumberedApplication, numbered
+from applytrail.lookup import sort_key as sort_key  # re-exported for callers of render.sort_key
+from applytrail.models import RunCounts, Status, Store, SyncState
 
-GMAIL_THREAD_URL = "https://mail.google.com/mail/u/0/#all/{thread_id}"
 EMPTY_MESSAGE = "No job applications found yet."
 
 _STATUS_STYLES = {
@@ -24,24 +26,26 @@ _STATUS_STYLES = {
 }
 
 
-def sort_key(app: Application) -> tuple:
-    """Newest first, then company and role A to Z (data-model.md "Ordering")."""
-    return (-app.last_activity.timestamp(), app.company.casefold(), (app.role or "").casefold())
-
-
-def build_table(store: Store) -> Table:
+def build_table(store: Store, rows: list[NumberedApplication] | None = None) -> Table:
+    """The main table. `rows` defaults to every application; a subset keeps its numbers."""
+    if rows is None:
+        rows = numbered(store)
     table = Table(box=box.SQUARE)
+    # `#` is as wide as the largest row number in the store, so a subset lines up the same.
+    table.add_column("#", width=len(str(len(store.applications))), justify="right", no_wrap=True)
     table.add_column("", width=4, no_wrap=True)
-    table.add_column("Company", max_width=28, no_wrap=True, overflow="ellipsis")
-    table.add_column("Role", max_width=30, no_wrap=True, overflow="ellipsis")
+    table.add_column("Company", max_width=25, no_wrap=True, overflow="ellipsis")
+    table.add_column("Role", max_width=27, no_wrap=True, overflow="ellipsis")
     table.add_column("Status", width=12, no_wrap=True)
     table.add_column("Last seen", width=10, no_wrap=True)
 
     added, updated = set(store.sync.added), set(store.sync.updated)
-    for app in sorted(store.applications.values(), key=sort_key):
+    for row in rows:
+        app = row.app
         badge = "NEW" if app.key in added else "UPD" if app.key in updated else ""
-        link = GMAIL_THREAD_URL.format(thread_id=app.thread_id)
+        link = links.thread_url(app.thread_id)
         table.add_row(
+            Text(str(row.number)),
             Text(badge, style="bold"),
             Text(app.company, style=f"link {link}"),
             Text(app.role or "Unknown"),  # email text: never parsed as markup

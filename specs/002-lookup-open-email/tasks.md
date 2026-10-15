@@ -33,8 +33,8 @@ model.
 
 **Purpose**: Baseline and shared test data
 
-- [ ] T001 Confirm the current branch is `002-lookup-open-email` and the baseline is green from the repository root: `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Note the passing test count for comparison.
-- [ ] T002 [P] Create anonymized store fixture `tests/fixtures/store_lookup.json`. It must be a valid `schema_version: 1` store (shape per specs/001-gmail-sync-table/contracts/store-schema.md) with **no** `sync.mailbox` key, `sync.last_sync_at` = `2026-10-14T08:02:11Z`, `last_sync_complete: true`, `stop_reason: "complete"`, and these applications (hex `thread_id`s such as `18c0aa01`). Newest-first order gives the row numbers in brackets:
+- [x] T001 Confirm the current branch is `002-lookup-open-email` and the baseline is green from the repository root: `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Note the passing test count for comparison.
+- [x] T002 [P] Create anonymized store fixture `tests/fixtures/store_lookup.json`. It must be a valid `schema_version: 1` store (shape per specs/001-gmail-sync-table/contracts/store-schema.md) with **no** `sync.mailbox` key, `sync.last_sync_at` = `2026-10-14T08:02:11Z`, `last_sync_complete: true`, `stop_reason: "complete"`, and these applications (hex `thread_id`s such as `18c0aa01`). Newest-first order gives the row numbers in brackets:
   - [1] `Acme Inc.` / `Backend Engineer` / interview / last 2026-10-12, key `acme|backend engineer`
   - [2] `Google` / `Software Engineer` / in_review / 2026-10-10
   - [3] `Globex International` / null role / applied / 2026-10-05, key `globex international|`
@@ -44,7 +44,7 @@ model.
   - [7] `Brightwave Labs` / `QA Engineer` / offer / 2026-08-01
 
   Leave `processed` empty or minimal. Don't include Initech, Gogle, or any real person's data.
-- [ ] T003 [P] Add `load_store_fixture(name: str) -> Store` to `tests/fakes.py`. It reads `tests/fixtures/<name>` and returns `Store.model_validate(...)`. Add a test in `tests/unit/test_fakes.py` that `store_lookup.json` loads with 7 applications.
+- [x] T003 [P] Add `load_store_fixture(name: str) -> Store` to `tests/fakes.py`. It reads `tests/fixtures/<name>` and returns `Store.model_validate(...)`. Add a test in `tests/unit/test_fakes.py` that `store_lookup.json` loads with 7 applications.
 
 ---
 
@@ -56,9 +56,9 @@ model.
 
 ### Tests first (write, run, see them fail)
 
-- [ ] T004 [P] Create `tests/unit/test_lookup.py` with failing tests for `lookup.numbered(store) -> list[NumberedApplication]`: numbers are 1-based and follow `render.sort_key` (newest `last_activity` first, then company, then role, casefolded); ties keep that order; an empty store gives `[]`; on `store_lookup.json` the numbers match T002's bracketed list. `NumberedApplication` has fields `number: int` (≥ 1) and `app: Application`.
-- [ ] T005 [P] Create `tests/unit/test_links.py` with failing tests for `links.thread_url(thread_id, mailbox=None)`. `thread_url("18c2f0a1b2")` must equal `https://mail.google.com/mail/u/0/#all/18c2f0a1b2`, and the thread id is percent-encoded with `quote(thread_id, safe="")` (for example, `a/b#c` must not leak `/` or `#`).
-- [ ] T006 [P] Update `tests/unit/test_render.py` before touching `render.py`:
+- [x] T004 [P] Create `tests/unit/test_lookup.py` with failing tests for `lookup.numbered(store) -> list[NumberedApplication]`: numbers are 1-based and follow `render.sort_key` (newest `last_activity` first, then company, then role, casefolded); ties keep that order; an empty store gives `[]`; on `store_lookup.json` the numbers match T002's bracketed list. `NumberedApplication` has fields `number: int` (≥ 1) and `app: Application`.
+- [x] T005 [P] Create `tests/unit/test_links.py` with failing tests for `links.thread_url(thread_id, mailbox=None)`. `thread_url("18c2f0a1b2")` must equal `https://mail.google.com/mail/u/0/#all/18c2f0a1b2`, and the thread id is percent-encoded with `quote(thread_id, safe="")` (for example, `a/b#c` must not leak `/` or `#`).
+- [x] T006 [P] Update `tests/unit/test_render.py` before touching `render.py`:
   - `test_columns_in_order` expects `["#", "", "Company", "Role", "Status", "Last seen"]`.
   - `test_column_widths` expects Company ≤ 25, Role ≤ 27, Status 12, Last seen 10, badge 4, and `#` as wide as the digits of the row count.
   - `test_long_names_are_ellipsized_within_100_columns` asserts company ≤ 25 and role ≤ 27.
@@ -70,13 +70,13 @@ model.
 
 ### Implementation
 
-- [ ] T007 Create `src/applytrail/lookup.py` with a module docstring citing research R3–R5, a frozen dataclass `NumberedApplication(number: int, app: Application)`, and `numbered(store: Store) -> list[NumberedApplication]` built from `sorted(store.applications.values(), key=render.sort_key)`. Make T004 pass. Move `sort_key` into `lookup.py` and re-export it from `render.py` if that's needed to avoid an import cycle.
-- [ ] T008 [P] Create `src/applytrail/links.py` with `GMAIL_THREAD_URL_TEMPLATE` and `thread_url(thread_id: str, mailbox: str | None = None) -> str`. With `mailbox=None` it uses `u/0`. Make T005 pass.
-- [ ] T009 Update `src/applytrail/render.py` to make T006 pass:
+- [x] T007 Create `src/applytrail/lookup.py` with a module docstring citing research R3–R5, a frozen dataclass `NumberedApplication(number: int, app: Application)`, and `numbered(store: Store) -> list[NumberedApplication]` built from `sorted(store.applications.values(), key=render.sort_key)`. Make T004 pass. Move `sort_key` into `lookup.py` and re-export it from `render.py` if that's needed to avoid an import cycle.
+- [x] T008 [P] Create `src/applytrail/links.py` with `GMAIL_THREAD_URL_TEMPLATE` and `thread_url(thread_id: str, mailbox: str | None = None) -> str`. With `mailbox=None` it uses `u/0`. Make T005 pass.
+- [x] T009 Update `src/applytrail/render.py` to make T006 pass:
   - Add a first column `#` (right-aligned, `no_wrap`, width = digits of the row count) and narrow Company to `max_width=25` and Role to `max_width=27`.
   - Change `build_table(store, rows: list[NumberedApplication] | None = None)` to default to `lookup.numbered(store)`.
   - Build the Company link with `links.thread_url(app.thread_id)` and delete `GMAIL_THREAD_URL`. Grep `src/` and `tests/` for other uses of it.
-- [ ] T010 Update the table layout section of `README.md` if it describes columns (add the `#` column). Otherwise leave it for polish.
+- [x] T010 Update the table layout section of `README.md` if it describes columns (add the `#` column). Otherwise leave it for polish. (Skipped per loop memory M-006 A1: T046 covers the README.)
 - [ ] T011 Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Then commit `feat(table): add row-number column and shared thread link builder` (Conventional Commit, foundation).
 
 **Checkpoint**: The table shows row numbers within 100 columns, and existing behaviour is unchanged.

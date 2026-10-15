@@ -6,8 +6,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from rich.console import Console
 
+from applytrail.lookup import numbered
 from applytrail.models import Application, RunCounts, Store
 from applytrail.render import build_table, render_summary, render_table
+from tests.fakes import load_store_fixture
 
 
 def console(**kwargs) -> Console:
@@ -51,7 +53,7 @@ def body_lines(text: str) -> list[str]:
 
 def test_columns_in_order():
     columns = build_table(store_with(app())).columns
-    assert [c.header for c in columns] == ["", "Company", "Role", "Status", "Last seen"]
+    assert [c.header for c in columns] == ["#", "", "Company", "Role", "Status", "Last seen"]
 
 
 def test_rows_ordered_by_last_activity_then_company_then_role():
@@ -63,7 +65,7 @@ def test_rows_ordered_by_last_activity_then_company_then_role():
         app("Oldest", None, day=1),
     )
     rows = [
-        line.split("│")[2].strip() + "/" + line.split("│")[3].strip()
+        line.split("│")[3].strip() + "/" + line.split("│")[4].strip()
         for line in body_lines(rendered(data))
     ]
     assert rows == [
@@ -80,28 +82,34 @@ def test_long_names_are_ellipsized_within_100_columns():
     text = rendered(store_with(app(long, "Y" * 80)))
     assert all(len(line) <= 100 for line in text.splitlines())
     row = body_lines(text)[0].split("│")
-    company, role = row[2].strip(), row[3].strip()
-    assert company.endswith("…") and len(company) <= 28
-    assert role.endswith("…") and len(role) <= 30
+    company, role = row[3].strip(), row[4].strip()
+    assert company.endswith("…") and len(company) <= 25
+    assert role.endswith("…") and len(role) <= 27
 
 
 def test_column_widths():
     text = rendered(store_with(app("C" * 40, "R" * 40, status="in_review")))
     cells = body_lines(text)[0].split("│")[1:-1]
     widths = [len(cell) - 2 for cell in cells]  # one space of padding on each side
-    assert widths == [4, 28, 30, 12, 10]
+    assert widths == [1, 4, 25, 27, 12, 10]
+
+
+def test_number_column_is_as_wide_as_the_row_count():
+    apps = [app(f"C{i:02d}", "Role", thread=f"t{i}") for i in range(12)]
+    cells = body_lines(rendered(store_with(*apps)))[0].split("│")[1:-1]
+    assert len(cells[0]) - 2 == 2
 
 
 def test_null_role_shows_unknown():
     row = body_lines(rendered(store_with(app(role=None))))[0]
-    assert row.split("│")[3].strip() == "Unknown"
+    assert row.split("│")[4].strip() == "Unknown"
 
 
 @pytest.mark.parametrize("role", ["Engineer [/bad]", "[bold]Engineer[/bold]"])
 def test_role_from_email_is_not_rich_markup(role):
     # Roles come from untrusted email text: brackets render literally, never as markup.
     row = body_lines(rendered(store_with(app(role=role))))[0]
-    assert row.split("│")[3].strip() == role
+    assert row.split("│")[4].strip() == role
 
 
 @pytest.mark.parametrize(
@@ -118,7 +126,7 @@ def test_role_from_email_is_not_rich_markup(role):
 )
 def test_status_is_text_without_colour(status, label):
     row = body_lines(rendered(store_with(app(status=status)), no_color=True))[0]
-    assert row.split("│")[4].strip() == label
+    assert row.split("│")[5].strip() == label
 
 
 def test_last_activity_is_local_date(monkeypatch):
@@ -131,7 +139,7 @@ def test_last_activity_is_local_date(monkeypatch):
     finally:
         monkeypatch.undo()
         time.tzset()
-    assert row.split("│")[5].strip() == "2026-10-13"
+    assert row.split("│")[6].strip() == "2026-10-13"
 
 
 def test_company_links_to_the_gmail_thread():
@@ -142,7 +150,7 @@ def test_company_links_to_the_gmail_thread():
 
 def test_badge_column_blank_without_badges():
     row = body_lines(rendered(store_with(app())))[0]
-    assert row.split("│")[1].strip() == ""
+    assert row.split("│")[2].strip() == ""
 
 
 def test_badges_are_text_without_colour():
@@ -153,8 +161,8 @@ def test_badges_are_text_without_colour():
 
     rows = body_lines(rendered(data, no_color=True))
 
-    assert [r.split("│")[1].strip() for r in rows] == ["NEW", "UPD", ""]
-    assert [r.split("│")[2].strip() for r in rows] == ["Acme", "Globex", "Initech"]
+    assert [r.split("│")[2].strip() for r in rows] == ["NEW", "UPD", ""]
+    assert [r.split("│")[3].strip() for r in rows] == ["Acme", "Globex", "Initech"]
 
 
 def test_second_sync_with_no_changes_shows_no_badges(tmp_path, monkeypatch):
@@ -170,7 +178,7 @@ def test_second_sync_with_no_changes_shows_no_badges(tmp_path, monkeypatch):
     now = datetime(2026, 10, 14, 12, 0, tzinfo=UTC)
     for run_at in (now, now + timedelta(days=1)):
         sync.run_sync(data, FakeMcpClient(fixtures), FakeExtractor(fixtures), settings, run_at)
-        badges = [r.split("│")[1].strip() for r in body_lines(rendered(data))]
+        badges = [r.split("│")[2].strip() for r in body_lines(rendered(data))]
         if run_at == now:
             assert badges == ["NEW"]
 
@@ -192,3 +200,34 @@ def test_header_fits_on_one_line():
     assert len([line for line in header.splitlines() if line.startswith("│")]) == 1
     assert "Last seen" in header
     assert "…" not in header
+
+
+def test_999_rows_with_long_names_fit_100_columns_without_wrapping():
+    apps = [app(f"{i:03d}" + "C" * 80, "R" * 80, thread=f"t{i}") for i in range(999)]
+    text = rendered(store_with(*apps))
+    assert all(len(line) <= 100 for line in text.splitlines())
+    assert len(body_lines(text)) == 999
+
+
+def test_row_numbers_are_plain_right_aligned_text():
+    apps = [app(f"C{i:02d}", "Role", thread=f"t{i}") for i in range(10)]
+    rows = body_lines(rendered(store_with(*apps), no_color=True))
+    assert [r.split("│")[1] for r in rows[:2]] == ["  1 ", "  2 "]
+    assert rows[9].split("│")[1] == " 10 "
+
+
+def test_subset_keeps_original_numbers():
+    data = load_store_fixture("store_lookup.json")
+    subset = [r for r in numbered(data) if r.number in (1, 5)]
+    out = console()
+    out.print(build_table(data, rows=subset))
+    rows = body_lines(out.export_text())
+    assert [(r.split("│")[1].strip(), r.split("│")[4].strip()) for r in rows] == [
+        ("1", "Backend Engineer"),
+        ("5", "Data Engineer"),
+    ]
+
+
+def test_company_from_email_is_not_rich_markup():
+    row = body_lines(rendered(store_with(app("[bold]Evil[/bold]", "Engineer"))))[0]
+    assert row.split("│")[3].strip() == "[bold]Evil[/bold]"
