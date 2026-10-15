@@ -1,4 +1,4 @@
-"""Table and summary rendering (T030, T014; contracts/cli.md "Table layout" and `check`)."""
+"""Table, summary and lookup rendering (T030, T014, T023; contracts/cli.md)."""
 
 import time
 from datetime import UTC, datetime, timedelta
@@ -6,13 +6,14 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from rich.console import Console
 
-from applytrail.lookup import LookupResult, Suggestion, find, numbered
+from applytrail.lookup import LookupResult, NumberedApplication, Suggestion, find, numbered
 from applytrail.models import Application, RunCounts, Store
 from applytrail.render import (
     build_check_table,
     build_table,
     render_found,
     render_not_found,
+    render_open,
     render_summary,
     render_table,
 )
@@ -395,3 +396,48 @@ def test_suggestion_company_is_not_markup():
         query="evl", matches=[], suggestions=[Suggestion("[bold]Evil[/bold]", [4], 0.8)]
     )
     assert not_found_text(result).splitlines()[1] == "Did you mean: [bold]Evil[/bold] (#4)?"
+
+
+# --- open output (T023, contracts/cli.md `open`) ---
+
+URL = "https://mail.google.com/mail/u/0/#all/18c0aa01"
+
+
+def open_lines(row: NumberedApplication, launching: bool, width: int = 100) -> list[str]:
+    out = Console(record=True, width=width)
+    render_open(row, URL, launching, out)
+    return out.export_text().splitlines()
+
+
+def acme_row() -> NumberedApplication:
+    return numbered(lookup_store())[0]
+
+
+def test_open_line_when_launching():
+    assert open_lines(acme_row(), launching=True) == [
+        "Opening Acme Inc. — Backend Engineer (#1)",
+        URL,
+    ]
+
+
+def test_address_for_line_when_not_launching():
+    assert open_lines(acme_row(), launching=False)[0] == (
+        "Address for Acme Inc. — Backend Engineer (#1)"
+    )
+
+
+def test_open_null_role_prints_unknown():
+    globex = numbered(lookup_store())[2]
+    assert open_lines(globex, launching=True)[0] == "Opening Globex International — Unknown (#3)"
+
+
+def test_open_address_is_never_broken_across_lines():
+    long_url = URL + "x" * 80
+    out = Console(record=True, width=40)
+    render_open(acme_row(), long_url, False, out)
+    assert long_url in out.export_text().splitlines()
+
+
+def test_open_company_is_not_markup():
+    evil = numbered(lookup_store())[3]
+    assert open_lines(evil, launching=True)[0] == "Opening [bold]Evil[/bold] — Engineer (#4)"

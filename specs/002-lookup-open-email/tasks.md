@@ -146,20 +146,20 @@ model.
 
 ### Tests first (write, run, see them fail)
 
-- [ ] T021 [P] [US2] Add failing tests to `tests/unit/test_links.py` (research R9):
+- [x] T021 [P] [US2] Add failing tests to `tests/unit/test_links.py` (research R9):
   - `can_launch_browser(environ, platform)`: `SSH_CONNECTION` set → False. `linux` with neither `DISPLAY` nor `WAYLAND_DISPLAY` → False. `linux` with either → True. `darwin` and `win32` without SSH → True.
   - `open_in_browser(url) -> bool` calls `webbrowser.open(url, new=2)` (monkeypatched) and returns False when it returns False or raises `webbrowser.Error`.
-- [ ] T022 [P] [US2] Add failing tests to `tests/unit/test_lookup.py` for `resolve(store, targets: list[str])`:
+- [x] T022 [P] [US2] Add failing tests to `tests/unit/test_lookup.py` for `resolve(store, targets: list[str])`:
   - A single all-digit target `"2"` → a `NumberedApplication` for row 2.
   - `"0"`, `"99"` and `"8"` (with 7 rows) raise `InvalidInput("No row 99. Choose a number from 1 to 7 (see applytrail --offline).")`.
   - Non-digit targets are joined with spaces and passed to `find`, returning the `LookupResult`.
   - Empty or punctuation-only text raises `InvalidInput("Enter a row number or company name, for example: applytrail open 3")`.
-- [ ] T023 [P] [US2] Add failing tests to `tests/unit/test_render.py` for `render_open(numbered, url, launching: bool, console)`:
+- [x] T023 [P] [US2] Add failing tests to `tests/unit/test_render.py` for `render_open(numbered, url, launching: bool, console)`:
   - Line 1 is `Opening Acme Inc. — Backend Engineer (#1)` when `launching`, or `Address for …` otherwise.
   - A null role prints `Unknown`.
   - Line 2 is exactly the address, with no inserted line break even at console width 40 (`soft_wrap=True`).
   - The company `[bold]Evil[/bold]` prints literally.
-- [ ] T024 [P] [US2] Add failing CLI tests to `tests/unit/test_cli.py` (contracts/cli.md `open`; patch `links.open_in_browser` and `links.can_launch_browser`):
+- [x] T024 [P] [US2] Add failing CLI tests to `tests/unit/test_cli.py` (contracts/cli.md `open`; patch `links.open_in_browser` and `links.can_launch_browser`):
   - `open 2` → exit 0, two stdout lines, browser called once with `https://mail.google.com/mail/u/0/#all/<thread of row 2>`.
   - `open 2 --print` → `Address for`, browser not called, exit 0.
   - `can_launch_browser` False → `Address for`, browser not called, exit 0.
@@ -174,15 +174,15 @@ model.
 
 ### Implementation
 
-- [ ] T025 [US2] Implement `can_launch_browser(environ=os.environ, platform=sys.platform) -> bool` and `open_in_browser(url) -> bool` (stdlib `webbrowser`, `new=2`, catches `webbrowser.Error`) in `src/applytrail/links.py`. Make T021 pass.
-- [ ] T026 [US2] Implement `resolve(store, targets)` in `src/applytrail/lookup.py`. It returns `NumberedApplication | LookupResult` and raises `InvalidInput` with the exact messages from T022. Make T022 pass.
-- [ ] T027 [US2] Implement `render_open(numbered, url, launching, console)` in `src/applytrail/render.py`: line 1 with `markup=False, highlight=False`, line 2 with `soft_wrap=True, highlight=False`. Make T023 pass.
-- [ ] T028 [US2] Add the `open` subcommand (`targets`, `nargs="+"`; `--print`, `store_true`) and `_open_command` to `src/applytrail/cli.py`:
+- [x] T025 [US2] Implement `can_launch_browser(environ=os.environ, platform=sys.platform) -> bool` and `open_in_browser(url) -> bool` (stdlib `webbrowser`, `new=2`, catches `webbrowser.Error`) in `src/applytrail/links.py`. Make T021 pass.
+- [x] T026 [US2] Implement `resolve(store, targets)` in `src/applytrail/lookup.py`. It returns `NumberedApplication | LookupResult` and raises `InvalidInput` with the exact messages from T022. Make T022 pass.
+- [x] T027 [US2] Implement `render_open(numbered, url, launching, console)` in `src/applytrail/render.py`: line 1 with `markup=False, highlight=False`, line 2 with `soft_wrap=True, highlight=False`. Make T023 pass.
+- [x] T028 [US2] Add the `open` subcommand (`targets`, `nargs="+"`; `--print`, `store_true`) and `_open_command` to `src/applytrail/cli.py`:
   - Show the no-data message (exit 6) when there are no applications and no sync.
   - Resolve the target. When several match, print `render.build_check_table(store, rows=matches)` and the stderr message, then exit 2. When none match, call `render.render_not_found` and exit 6.
   - When one matches: `url = links.thread_url(app.thread_id)`; `launching = not args.print and links.can_launch_browser()`; call `render_open`; if launching and `open_in_browser(url)` returns False, print the stderr note. Exit 0.
   - Make T024 pass.
-- [ ] T029 [US2] Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `feat(us2): open an application's Gmail thread from the terminal`.
+- [x] T029 [US2] Gate: `uv run ruff check . && uv run ruff format --check . && uv run pytest` must all pass. Commit `feat(us2): open an application's Gmail thread from the terminal`.
 
 **Checkpoint**: Every row can be opened by number or name, with or without a browser.
 

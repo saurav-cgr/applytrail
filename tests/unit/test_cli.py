@@ -731,3 +731,150 @@ def test_check_not_found_with_a_wordless_company_exits_6(offline, capsys):
     assert err == ""
     assert out.splitlines()[0] == 'No application found for "Initech".'
     assert offline.settings.store_path.read_bytes() == raw
+
+
+# --- open (US2, T024, contracts/cli.md `open`) -------------------------------------------------
+
+ROW_2_URL = "https://mail.google.com/mail/u/0/#all/18c0aa02"
+
+
+@pytest.fixture
+def opener(offline, monkeypatch):
+    """`offline` plus a fake browser; nothing real is ever launched."""
+    from applytrail import links
+
+    offline.browser_calls = []
+    offline.browser_result = True
+    offline.can_launch = True
+
+    def fake_open(url):
+        offline.browser_calls.append(url)
+        return offline.browser_result
+
+    monkeypatch.setattr(links, "open_in_browser", fake_open)
+    monkeypatch.setattr(links, "can_launch_browser", lambda *a, **k: offline.can_launch)
+    offline.raw = copy_lookup_store(offline.settings)
+    return offline
+
+
+def test_open_number_opens_the_thread(opener, capsys):
+    assert cli.main(["open", "2"]) == 0
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == ["Opening Google — Software Engineer (#2)", ROW_2_URL]
+    assert opener.browser_calls == [ROW_2_URL]
+    assert opener.settings.store_path.read_bytes() == opener.raw
+
+
+def test_open_print_never_calls_the_browser(opener, capsys):
+    assert cli.main(["open", "2", "--print"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines() == ["Address for Google — Software Engineer (#2)", ROW_2_URL]
+    assert opener.browser_calls == []
+
+
+def test_open_without_graphical_session_prints_only(opener, capsys):
+    opener.can_launch = False
+
+    assert cli.main(["open", "2"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[0] == "Address for Google — Software Engineer (#2)"
+    assert opener.browser_calls == []
+
+
+def test_open_browser_failure_notes_on_stderr_and_exits_0(opener, capsys):
+    opener.browser_result = False
+
+    assert cli.main(["open", "2"]) == 0
+
+    out, err = capsys.readouterr()
+    assert out.splitlines() == ["Opening Google — Software Engineer (#2)", ROW_2_URL]
+    assert_one_line(err, "Could not open a browser; use the address above.")
+
+
+def test_open_row_out_of_range_exits_2(opener, capsys):
+    assert cli.main(["open", "99"]) == 2
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No row 99. Choose a number from 1 to 7 (see applytrail --offline).")
+    assert opener.browser_calls == []
+
+
+def test_open_by_unique_name(opener, capsys):
+    assert cli.main(["open", "google"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[0] == "Opening Google — Software Engineer (#2)"
+    assert opener.browser_calls == [ROW_2_URL]
+
+
+def test_open_several_matches_lists_rows_and_exits_2(opener, capsys):
+    assert cli.main(["open", "acme"]) == 2
+
+    out, err = capsys.readouterr()
+    assert "First seen" in out
+    assert "Backend Engineer" in out and "Data Engineer" in out
+    numbers = [line.split("│")[1].strip() for line in out.splitlines() if line.startswith("│ ")]
+    assert numbers[1:] == ["1", "5"]  # after the header row
+    assert_one_line(err, 'Several applications match "acme". Run: applytrail open <number>')
+    assert opener.browser_calls == []
+    assert opener.settings.store_path.read_bytes() == opener.raw
+
+
+def test_open_no_match_prints_not_found_and_exits_6(opener, capsys):
+    assert cli.main(["open", "initech"]) == 6
+
+    out, err = capsys.readouterr()
+    assert err == ""
+    assert out.splitlines() == [
+        'No application found for "initech".',
+        "Last sync: 2026-10-14 08:02 (complete)",
+    ]
+    assert opener.browser_calls == []
+
+
+@pytest.mark.parametrize("target", ["&", ",."])
+def test_open_empty_name_exits_2(opener, capsys, target):
+    assert cli.main(["open", target]) == 2
+
+    _, err = capsys.readouterr()
+    assert_one_line(err, "Enter a row number or company name, for example: applytrail open 3")
+
+
+def test_open_no_data_exits_6(offline, capsys):
+    assert cli.main(["open", "1"]) == 6
+
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert_one_line(err, "No data yet. Run applytrail to sync.")
+    assert not offline.settings.home.exists()
+
+
+def test_open_unreadable_store_exits_5(offline, capsys):
+    offline.settings.home.mkdir(parents=True)
+    offline.settings.store_path.write_text("{not json", encoding="utf-8")
+
+    assert cli.main(["open", "1"]) == 5
+
+
+def test_open_huge_row_number_exits_2(opener, capsys):
+    # V-006: an over-long digit string is out of range, not an unexpected error.
+    target = "9" * 4500
+    assert cli.main(["open", target]) == 2
+
+    _, err = capsys.readouterr()
+    assert_one_line(
+        err, f"No row {target}. Choose a number from 1 to 7 (see applytrail --offline)."
+    )
+    assert opener.browser_calls == []
+
+
+def test_open_row_with_many_leading_zeros(opener, capsys):
+    assert cli.main(["open", "0" * 4500 + "2", "--print"]) == 0
+
+    out, _ = capsys.readouterr()
+    assert out.splitlines()[0] == "Address for Google — Software Engineer (#2)"

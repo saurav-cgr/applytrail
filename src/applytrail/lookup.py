@@ -4,6 +4,7 @@ Row numbers are 1-based positions in the table's newest-first order, so the numb
 reads in the table is the number `open` accepts.
 """
 
+import re
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 
@@ -12,6 +13,7 @@ from applytrail.models import Application, Store
 from applytrail.normalize import norm_company
 
 CHECK_EMPTY_MESSAGE = "Enter a company name, for example: applytrail check acme"
+OPEN_EMPTY_MESSAGE = "Enter a row number or company name, for example: applytrail open 3"
 SUGGEST_CUTOFF = 0.75
 MAX_SUGGESTIONS = 3
 
@@ -107,3 +109,19 @@ def find(store: Store, text: str, empty_message: str = CHECK_EMPTY_MESSAGE) -> L
     matches = [r for r in rows if any(_contains(w, query) for w in _company_words(r.app))]
     suggestions = [] if matches else _suggest(rows, query)
     return LookupResult(query=text, matches=matches, suggestions=suggestions)
+
+
+def resolve(store: Store, targets: list[str]) -> NumberedApplication | LookupResult:
+    """A single all-digit target is a row number; anything else is a company name."""
+    if len(targets) == 1 and re.fullmatch(r"[0-9]+", targets[0]):
+        rows = numbered(store)
+        # Compare as text before int(): Python refuses int() on over-long digit strings.
+        digits = targets[0].lstrip("0") or "0"
+        number = int(digits) if len(digits) <= len(str(len(rows))) else 0
+        if not 1 <= number <= len(rows):
+            raise InvalidInput(
+                f"No row {targets[0]}. Choose a number from 1 to {len(rows)} "
+                "(see applytrail --offline)."
+            )
+        return rows[number - 1]
+    return find(store, " ".join(targets), empty_message=OPEN_EMPTY_MESSAGE)

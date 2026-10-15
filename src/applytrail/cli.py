@@ -1,5 +1,5 @@
-"""`applytrail`: sync new mail, save, print the table; `check` looks up the saved store
-(contracts/cli.md).
+"""`applytrail`: sync new mail, save, print the table; `check` and `open` read the saved
+store only (contracts/cli.md).
 
 Expected failures print one line to stderr and exit with their code, never a stack trace
 (Principle VII). The table goes to stdout; progress and messages go to stderr.
@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 from dotenv import find_dotenv, load_dotenv
 from rich.console import Console
 
-from applytrail import __version__, lookup, render, store
+from applytrail import __version__, links, lookup, render, store
 from applytrail.config import Settings, ensure_home
 from applytrail.errors import AppError, Interrupted
 
@@ -39,6 +39,11 @@ def main(argv: list[str] | None = None) -> int:
         "check", help="check whether you already applied to a company (saved data only)"
     )
     check.add_argument("names", nargs="+", metavar="NAME", help="company name")
+    open_ = commands.add_parser("open", help="open an application's Gmail thread")
+    open_.add_argument("targets", nargs="+", metavar="TARGET", help="row number or company name")
+    open_.add_argument(
+        "--print", dest="print_only", action="store_true", help="print the address only"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -55,6 +60,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "check":
             return _check_command(settings, out, args.names)
+        if args.command == "open":
+            return _open_command(settings, out, args.targets, args.print_only)
         if args.offline:
             return _offline_command(settings, out)
         return _sync_command(settings, out, err)
@@ -92,6 +99,30 @@ def _check_command(settings: Settings, out: Console, names: list[str]) -> int:
         return 0
     render.render_not_found(result, data, out)
     return 6
+
+
+def _open_command(settings: Settings, out: Console, targets: list[str], print_only: bool) -> int:
+    """Print one application's thread address and open it where possible; writes nothing."""
+    data = store.load(settings.store_path)
+    if not data.applications and data.sync.last_sync_at is None:
+        _message(NO_DATA_MESSAGE)
+        return 6
+    target = lookup.resolve(data, targets)  # InvalidInput exits 2 via main
+    if isinstance(target, lookup.LookupResult):
+        if not target.found:
+            render.render_not_found(target, data, out)
+            return 6
+        if len(target.matches) > 1:
+            out.print(render.build_check_table(data, target.matches))
+            _message(f'Several applications match "{target.query}". Run: applytrail open <number>')
+            return 2
+        target = target.matches[0]
+    url = links.thread_url(target.app.thread_id)
+    launching = not print_only and links.can_launch_browser()
+    render.render_open(target, url, launching, out)
+    if launching and not links.open_in_browser(url):
+        _message("Could not open a browser; use the address above.")
+    return 0
 
 
 def _sync_command(settings: Settings, out: Console, err: Console) -> int:

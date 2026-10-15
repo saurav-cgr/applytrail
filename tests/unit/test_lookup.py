@@ -13,6 +13,7 @@ from applytrail.lookup import (
     find,
     normalize_query,
     numbered,
+    resolve,
 )
 from applytrail.models import Application, Store
 from tests.fakes import load_store_fixture
@@ -294,3 +295,63 @@ def test_company_with_no_lookup_words_is_skipped_for_suggestions():
     assert result.matches == []
     assert [s.company for s in result.suggestions] == ["Google"]
     assert find(data, "Initech").suggestions == []
+
+
+# --- resolve (T022, contracts/cli.md `open`) ---
+
+
+def test_resolve_single_number_returns_that_row():
+    row = resolve(lookup_store(), ["2"])
+    assert isinstance(row, NumberedApplication)
+    assert (row.number, row.app.company) == (2, "Google")
+
+
+@pytest.mark.parametrize("target", ["0", "99", "8"])
+def test_resolve_number_out_of_range(target):
+    with pytest.raises(InvalidInput) as raised:
+        resolve(lookup_store(), [target])
+    assert raised.value.message == (
+        f"No row {target}. Choose a number from 1 to 7 (see applytrail --offline)."
+    )
+
+
+def test_resolve_name_returns_lookup_result():
+    result = resolve(lookup_store(), ["acme", "corp"])
+    assert isinstance(result, LookupResult)
+    assert result.query == "acme corp"
+    assert [r.number for r in result.matches] == [1, 5]
+
+
+def test_resolve_several_targets_with_digits_are_a_name():
+    result = resolve(lookup_store(), ["3", "acme"])
+    assert isinstance(result, LookupResult)
+    assert result.matches == []
+
+
+@pytest.mark.parametrize("targets", [["&"], ["  "], [",", "."]])
+def test_resolve_empty_name(targets):
+    with pytest.raises(InvalidInput) as raised:
+        resolve(lookup_store(), targets)
+    assert raised.value.message == (
+        "Enter a row number or company name, for example: applytrail open 3"
+    )
+
+
+def test_resolve_huge_number_is_out_of_range_not_a_crash():
+    # V-006: Python refuses int() on digit strings over 4300 characters.
+    target = "9" * 4500
+    with pytest.raises(InvalidInput) as raised:
+        resolve(lookup_store(), [target])
+    assert raised.value.message == (
+        f"No row {target}. Choose a number from 1 to 7 (see applytrail --offline)."
+    )
+
+
+@pytest.mark.parametrize("target", ["02", "0" * 4500 + "2"], ids=["02", "4500-zeros-2"])
+def test_resolve_leading_zeros_pick_the_row(target):
+    assert resolve(lookup_store(), [target]).number == 2
+
+
+def test_resolve_all_zeros_is_out_of_range():
+    with pytest.raises(InvalidInput):
+        resolve(lookup_store(), ["0" * 4500])

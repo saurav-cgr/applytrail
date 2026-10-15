@@ -132,6 +132,13 @@ def render_not_found(result: LookupResult, store: Store, console: Console) -> No
     _plain(console, last_sync_line(store.sync) or "No sync has run yet.")
 
 
+def render_open(row: NumberedApplication, url: str, launching: bool, console: Console) -> None:
+    """What is being opened, then the address alone on its own unbroken line (research R9)."""
+    verb = "Opening" if launching else "Address for"
+    _plain(console, f"{verb} {row.app.company} — {row.app.role or 'Unknown'} (#{row.number})")
+    _plain(console, url)
+
+
 def _plain(console: Console, text: str) -> None:
     """One line printed literally: user and email text is never Rich markup."""
     console.print(text, markup=False, highlight=False, soft_wrap=True)
