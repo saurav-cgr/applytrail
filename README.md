@@ -122,6 +122,10 @@ Links name the Google account the data was synced from; each sync asks Gmail whi
 token belongs to. Use a browser signed in to that one Google account. With several accounts
 signed in, Gmail can show an "account temporarily unavailable" page instead of the email.
 
+Known limitation: Gmail's web view currently ignores the thread ID in these links, so `open` and
+the Company links land on the mailbox's message list rather than the email itself. Search
+Gmail for the company or the subject to find it.
+
 ## Environment variables
 
 | Variable | Default | Purpose |
