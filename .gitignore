@@ -10,6 +10,7 @@ token.json.tmp
 .applytrail/
 
 # Local agent tooling
+.specify/
 .agents/
 .claude/
 .serena/
